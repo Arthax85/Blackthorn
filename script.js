@@ -76,7 +76,12 @@ async function login(event) {
     loginButton.disabled = false;
     
     if (!response.ok) {
-      throw new Error(data.error || 'Error al iniciar sesión');
+      // Check if it's an authentication error (401)
+      if (response.status === 401) {
+        throw new Error('Usuario y/o contraseña incorrecta');
+      } else {
+        throw new Error(data.error || 'Error al iniciar sesión');
+      }
     }
     
     // Login successful
@@ -99,8 +104,6 @@ async function login(event) {
     console.error('Login error:', error);
     
     // Check if it's a connection error
-    // In the login function, replace alert with showNotification
-    // Around line 88-95
     if (error.message.includes('connection') || error.message === 'Failed to fetch') {
       showNotification('No se pudo conectar con el servidor. Por favor, intente de nuevo más tarde.', 'error');
     } else {
@@ -116,7 +119,7 @@ async function login(event) {
   }
 }
 
-// Function to handle registration (similar updates)
+// Function to handle registration
 async function register(event) {
   event.preventDefault();
   
@@ -155,63 +158,8 @@ async function register(event) {
       throw new Error(data.error || 'Error al registrarse');
     }
     
-    // In the register function, replace alert with showNotification
-    // Around line 135
     // Registration successful
     showNotification('Usuario registrado correctamente', 'success');
-    
-    // Around line 147-152
-    if (error.message.includes('connection') || error.message === 'Failed to fetch') {
-      showNotification('No se pudo conectar con el servidor. Por favor, intente de nuevo más tarde.', 'error');
-    } else {
-      showNotification(error.message || 'Error al registrarse', 'error');
-    }
-    
-    // In the confirmDeleteAccount function
-    // Around line 190
-    // Replace the confirmDeleteAccount function with this custom version
-    function confirmDeleteAccount() {
-      const dialog = document.getElementById('confirmation-dialog');
-      const confirmBtn = document.getElementById('confirm-yes');
-      const cancelBtn = document.getElementById('confirm-no');
-      
-      // Show the dialog
-      dialog.style.display = 'flex';
-      
-      // Set up event listeners
-      const handleConfirm = () => {
-        dialog.style.display = 'none';
-        deleteAccount();
-        // Clean up event listeners
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-      };
-      
-      const handleCancel = () => {
-        dialog.style.display = 'none';
-        // Clean up event listeners
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-      };
-      
-      // Add event listeners
-      confirmBtn.addEventListener('click', handleConfirm);
-      cancelBtn.addEventListener('click', handleCancel);
-    }
-    
-    // In the deleteAccount function
-    // Around line 200
-    if (!currentUser || !currentUser.email) {
-      showNotification('No hay una sesión activa', 'error');
-      return;
-    }
-    
-    // Around line 240
-    // Account deleted successfully
-    showNotification('Tu cuenta ha sido eliminada correctamente', 'success');
-    
-    // Around line 250
-    showNotification(`Error al eliminar la cuenta: ${error.message}`, 'error');
     document.querySelector('#register-form form').reset();
     showLoginForm();
     
@@ -222,6 +170,13 @@ async function register(event) {
     const registerButton = event.target.querySelector('button');
     registerButton.textContent = 'Registrarse';
     registerButton.disabled = false;
+    
+    // Show error notification
+    if (error.message.includes('connection') || error.message === 'Failed to fetch') {
+      showNotification('No se pudo conectar con el servidor. Por favor, intente de nuevo más tarde.', 'error');
+    } else {
+      showNotification(error.message || 'Error al registrarse', 'error');
+    }
   }
 }
 
@@ -422,7 +377,14 @@ async function deleteAccount() {
 
 // Add this function to show notifications instead of alerts
 function showNotification(message, type = 'info', duration = 5000) {
-  const container = document.getElementById('notification-container');
+  // Check if container exists, create it if it doesn't
+  let container = document.getElementById('notification-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'notification-container';
+    container.className = 'notification-container';
+    document.body.appendChild(container);
+  }
   
   // Create notification element
   const notification = document.createElement('div');
@@ -439,7 +401,9 @@ function showNotification(message, type = 'info', duration = 5000) {
     notification.style.transition = 'opacity 0.3s, transform 0.3s';
     
     setTimeout(() => {
-      container.removeChild(notification);
+      if (container.contains(notification)) {
+        container.removeChild(notification);
+      }
     }, 300);
   }, duration);
   
