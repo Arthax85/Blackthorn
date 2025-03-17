@@ -197,13 +197,14 @@ input:focus {
     box-shadow: 0 0 10px rgba(255, 0, 68, 0.8);
 }
 
+/* Add these styles for the button group in the user info section */
 .button-group {
   display: flex;
   gap: 10px;
   margin-top: 20px;
 }
 
-.delete-account-btn {
+.sign-out-btn, .delete-account-btn {
   background-color: #ff0044;
   color: #000;
   border: 2px solid #ff0044;
@@ -213,9 +214,10 @@ input:focus {
   font-size: 1.2em;
   transition: background-color 0.3s ease, transform 0.3s ease;
   font-family: 'Orbitron', sans-serif;
+  flex: 1;
 }
 
-.delete-account-btn:hover {
+.sign-out-btn:hover, .delete-account-btn:hover {
   background-color: #cc0036;
   transform: scale(1.05);
 }
