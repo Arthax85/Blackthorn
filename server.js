@@ -3,29 +3,30 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const path = require('path');
+// Keep nodemailer import for future use
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configure email transporter for Gmail
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'your-gmail@gmail.com',     // Replace with your Gmail address
-    pass: 'your-app-password'         // Replace with your Gmail app password
-  }
-});
+// Comment out the transporter configuration for now
+// const transporter = nodemailer.createTransport({
+//   service: 'gmail',
+//   auth: {
+//     user: 'your-gmail@gmail.com',
+//     pass: 'your-app-password'
+//   }
+// });
 
-// Test the transporter
-transporter.verify(function(error, success) {
-  if (error) {
-    console.error('Email transporter error:', error);
-  } else {
-    console.log('Email server is ready to send messages');
-  }
-});
+// Comment out the transporter verification
+// transporter.verify(function(error, success) {
+//   if (error) {
+//     console.error('Email transporter error:', error);
+//   } else {
+//     console.log('Email server is ready to send messages');
+//   }
+// });
 
 // PostgreSQL connection
 const pool = new Pool({
@@ -192,9 +193,11 @@ app.post('/api/recover-password', async (req, res) => {
     // Create reset URL - use your actual frontend URL
     const resetUrl = `https://blackthorn-auth.onrender.com/reset-password?token=${token}`;
     
-    // Skip email sending for now and just return the token directly
+    // Log the token for debugging
     console.log('Password reset token generated:', token);
+    console.log('Reset URL:', resetUrl);
     
+    // Return success response with token for testing
     res.status(200).json({ 
       message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.`,
       // Include token for testing - remove in production
