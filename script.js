@@ -85,7 +85,12 @@ async function login(event) {
     document.getElementById('user-info').style.display = 'block';
     document.getElementById('login-form').style.display = 'none';
     document.getElementById('register-form').style.display = 'none';
-    document.getElementById('login-form').reset();
+    
+    // Reset the form using the form element itself, not the container div
+    const loginForm = document.querySelector('#login-form form');
+    if (loginForm) {
+      loginForm.reset();
+    }
     
     // Save login state
     localStorage.setItem('currentUser', JSON.stringify(data));
@@ -102,8 +107,10 @@ async function login(event) {
     
     // Reset button if it wasn't reset
     const loginButton = event.target.querySelector('button');
-    loginButton.textContent = 'Iniciar Sesión';
-    loginButton.disabled = false;
+    if (loginButton) {
+      loginButton.textContent = 'Iniciar Sesión';
+      loginButton.disabled = false;
+    }
   }
 }
 
