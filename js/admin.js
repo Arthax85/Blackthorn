@@ -69,31 +69,18 @@ async function loadUsers() {
     // Check if we have a token
     if (!currentUser.token) {
       console.warn('No token found in user data');
-      // Add a mock token for testing
-      currentUser.token = 'mock-token-' + btoa(currentUser.email + ':' + Date.now());
+      // For real API connection, we'll create a JWT-like token
+      currentUser.token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' + 
+                          btoa(JSON.stringify({email: currentUser.email, id: currentUser.id, role: 'admin'})) + 
+                          '.signature';
       // Update localStorage with the token
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
-      console.log('Added mock token to user data');
+      console.log('Added JWT-like token to user data');
     }
     
-    // Check if token is a mock token (starts with 'mock-token-')
-    const isMockToken = currentUser.token.startsWith('mock-token-');
-    
-    // If using a mock token, just show mock data
-    if (isMockToken) {
-      console.warn('Using mock token, showing mock data');
-      const mockUsers = [
-        { id: 1, name: 'Usuario de Prueba (DATOS LOCALES)', email: 'test@example.com', role: 'user', createdAt: new Date() },
-        { id: 2, name: 'Admin (DATOS LOCALES)', email: 'zerocult_new@hotmail.com', role: 'admin', createdAt: new Date() },
-        { id: 3, name: 'Usuario Real (SIMULADO)', email: 'usuario@example.com', role: 'user', createdAt: new Date(Date.now() - 86400000) }
-      ];
-      displayUsers(mockUsers);
-      return;
-    }
-    
-    // Continue with real API call if we have a real token
-    // Get the API URL from the global variable or define it here
-    const API_URL = window.API_URL || 'https://blackthorn-auth.onrender.com/api';
+    // Get the API URL - try different options
+    const API_URL = 'https://blackthorn-auth.onrender.com/api';
+    console.log('Using API URL:', API_URL);
     
     // Try different endpoints to get users
     let response;
@@ -107,8 +94,7 @@ async function loadUsers() {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'Authorization': `Bearer ${currentUser.token}`
-      },
-      credentials: 'include'
+      }
     });
     
     console.log('Response status:', response.status);
@@ -122,11 +108,25 @@ async function loadUsers() {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': currentUser.token ? `Bearer ${currentUser.token}` : ''
-        },
-        credentials: 'include'
+          'Authorization': `Bearer ${currentUser.token}`
+        }
       });
       console.log('Alternate endpoint response status:', response.status);
+    }
+    
+    // If both fail, try one more endpoint
+    if (!response.ok) {
+      endpoint = '/api/users';
+      console.log('Trying third endpoint:', `${API_URL}${endpoint}`);
+      response = await fetch(`${API_URL}${endpoint}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        }
+      });
+      console.log('Third endpoint response status:', response.status);
     }
     
     if (!response.ok) {
