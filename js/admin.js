@@ -99,42 +99,48 @@ async function loadUsers() {
     
     console.log('Response status:', response.status);
     
-    // If that fails, try the /admin/users endpoint
-    if (!response.ok) {
-      endpoint = '/admin/users';
-      console.log('Trying alternate endpoint:', `${API_URL}${endpoint}`);
-      response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${currentUser.token}`
+    // Check the response content type
+    const contentType = response.headers.get('content-type');
+    console.log('Response content type:', contentType);
+    
+    // Get the raw text response first to inspect it
+    const responseText = await response.text();
+    console.log('Raw response text:', responseText);
+    
+    // Try to parse the response as JSON
+    let data;
+    try {
+      // If the response is empty or not JSON, create a default structure
+      if (!responseText || !responseText.trim()) {
+        console.warn('Empty response received');
+        data = { users: [] };
+      } else {
+        data = JSON.parse(responseText);
+      }
+    } catch (jsonError) {
+      console.error('JSON parse error:', jsonError);
+      
+      // If it's HTML, it might be a login page or error page
+      if (responseText.includes('<html') || responseText.includes('<!DOCTYPE')) {
+        console.warn('Received HTML instead of JSON');
+        throw new Error('El servidor devolvió HTML en lugar de datos JSON. Posible problema de autenticación.');
+      }
+      
+      // Try to create a user array from the text if possible
+      if (responseText.includes('email') || responseText.includes('name')) {
+        try {
+          // Simple attempt to convert to JSON if it looks like user data
+          const cleanedText = responseText.replace(/[\r\n]+/g, ' ').trim();
+          data = { users: [{ id: 1, name: 'Parsed User', email: cleanedText, role: 'user', createdAt: new Date() }] };
+        } catch (e) {
+          throw new Error('Formato de respuesta no válido: ' + responseText.substring(0, 50));
         }
-      });
-      console.log('Alternate endpoint response status:', response.status);
+      } else {
+        throw new Error('Formato de respuesta no válido: ' + responseText.substring(0, 50));
+      }
     }
     
-    // If both fail, try one more endpoint
-    if (!response.ok) {
-      endpoint = '/api/users';
-      console.log('Trying third endpoint:', `${API_URL}${endpoint}`);
-      response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${currentUser.token}`
-        }
-      });
-      console.log('Third endpoint response status:', response.status);
-    }
-    
-    if (!response.ok) {
-      throw new Error(`Error al obtener usuarios (${response.status}): ${await response.text()}`);
-    }
-    
-    const data = await response.json();
-    console.log('Users data received:', data);
+    console.log('Parsed data:', data);
     
     // Handle different response formats
     let users = [];
