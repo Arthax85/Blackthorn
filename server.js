@@ -213,6 +213,170 @@ app.post('/api/recover-password', async (req, res) => {
   }
 });
 
+// Add a specific route for the reset-password page
+app.get('/reset-password', (req, res) => {
+  const token = req.query.token;
+  
+  if (!token) {
+    return res.redirect('/');
+  }
+  
+  // Serve a special HTML page for password reset
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Restablecer Contraseña</title>
+      <link rel="stylesheet" href="styles.css">
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          background-color: #f4f4f4;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+        }
+        .container {
+          background-color: white;
+          padding: 30px;
+          border-radius: 5px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          width: 350px;
+          max-width: 100%;
+        }
+        h1 {
+          text-align: center;
+          margin-bottom: 20px;
+        }
+        .form-group {
+          margin-bottom: 15px;
+        }
+        label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: bold;
+        }
+        input {
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          box-sizing: border-box;
+        }
+        button {
+          width: 100%;
+          padding: 10px;
+          background-color: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 16px;
+        }
+        button:hover {
+          background-color: #45a049;
+        }
+        .message {
+          margin-top: 15px;
+          padding: 10px;
+          border-radius: 4px;
+          text-align: center;
+        }
+        .success {
+          background-color: #d4edda;
+          color: #155724;
+        }
+        .error {
+          background-color: #f8d7da;
+          color: #721c24;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>Restablecer Contraseña</h1>
+        <div id="message" class="message" style="display: none;"></div>
+        <form id="resetForm">
+          <input type="hidden" id="token" value="${token}">
+          <div class="form-group">
+            <label for="password">Nueva Contraseña</label>
+            <input type="password" id="password" required>
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">Confirmar Contraseña</label>
+            <input type="password" id="confirmPassword" required>
+          </div>
+          <button type="submit">Restablecer Contraseña</button>
+        </form>
+      </div>
+      
+      <script>
+        document.getElementById('resetForm').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          const token = document.getElementById('token').value;
+          const password = document.getElementById('password').value;
+          const confirmPassword = document.getElementById('confirmPassword').value;
+          const messageDiv = document.getElementById('message');
+          
+          // Clear previous messages
+          messageDiv.textContent = '';
+          messageDiv.className = 'message';
+          messageDiv.style.display = 'none';
+          
+          // Validate passwords
+          if (password !== confirmPassword) {
+            messageDiv.textContent = 'Las contraseñas no coinciden';
+            messageDiv.className = 'message error';
+            messageDiv.style.display = 'block';
+            return;
+          }
+          
+          try {
+            const response = await fetch('/api/reset-password', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                token: token,
+                newPassword: password
+              })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+              messageDiv.textContent = data.message;
+              messageDiv.className = 'message success';
+              messageDiv.style.display = 'block';
+              
+              // Redirect to login page after 3 seconds
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 3000);
+            } else {
+              messageDiv.textContent = data.error || 'Error al restablecer la contraseña';
+              messageDiv.className = 'message error';
+              messageDiv.style.display = 'block';
+            }
+          } catch (error) {
+            messageDiv.textContent = 'Error de conexión';
+            messageDiv.className = 'message error';
+            messageDiv.style.display = 'block';
+          }
+        });
+      </script>
+    </body>
+    </html>
+  `);
+});
+
 // Add a new endpoint to handle password reset
 app.post('/api/reset-password', async (req, res) => {
   const { token, newPassword } = req.body;
@@ -362,4 +526,4 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-}); // This closing bracket was missing
+});
