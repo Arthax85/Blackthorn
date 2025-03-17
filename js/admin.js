@@ -127,8 +127,8 @@ async function loadUsers() {
     try {
       console.log('Attempting to fetch users from real database');
       
-      // API URL - update to use the correct endpoint for your PostgreSQL database on Render
-      const API_URL = 'https://blackthorn-auth.onrender.com/api/admin';
+      // API URL - update to the correct endpoint structure
+      const API_URL = 'https://blackthorn-auth.onrender.com/api';
       
       // Make the API request
       const response = await fetch(`${API_URL}/users`, {
@@ -137,8 +137,7 @@ async function loadUsers() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${currentUser.token}`,
           'Accept': 'application/json'
-        },
-        credentials: 'include' // Include cookies if your API uses session-based auth
+        }
       });
       
       // Log response details for debugging
