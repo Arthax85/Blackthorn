@@ -204,7 +204,7 @@ app.post('/api/recover-password', async (req, res) => {
     // Prepare email content
     const msg = {
       to: user.email,
-      from: 'your-verified-sender@example.com', // Change to your verified sender email in SendGrid
+      from: 'zerocult_new@hotmail.com', // Change this to your verified sender email
       subject: 'Recuperación de contraseña',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
