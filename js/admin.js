@@ -557,10 +557,15 @@ function confirmDeleteUser(userId) {
         
         // Try to find the user by ID first, then by email if ID fails
         let userToDelete = mockUsers.find(u => u.id == userId);
+        let userIdToDelete = userId;
         
         if (!userToDelete && userData.email) {
           console.log('User not found by ID, trying by email:', userData.email);
           userToDelete = mockUsers.find(u => u.email === userData.email);
+          if (userToDelete) {
+            userIdToDelete = userToDelete.id;
+            console.log('Found user by email with ID:', userIdToDelete);
+          }
         }
         
         if (!userToDelete) {
@@ -580,8 +585,18 @@ function confirmDeleteUser(userId) {
           throw new Error('No puedes eliminar tu propio usuario');
         }
         
-        // Remove the user from the array
-        const newMockUsers = mockUsers.filter(u => u.id != userId);
+        // Remove the user from the array - use both ID and email to ensure removal
+        console.log('Removing user with ID:', userIdToDelete, 'and email:', userData.email);
+        const newMockUsers = mockUsers.filter(u => {
+          return u.id != userIdToDelete && u.email !== userData.email;
+        });
+        
+        console.log('Users before deletion:', mockUsers.length);
+        console.log('Users after deletion:', newMockUsers.length);
+        
+        if (mockUsers.length === newMockUsers.length) {
+          console.warn('No users were removed from mock data');
+        }
         
         // Save updated mock users
         localStorage.setItem('mockUsers', JSON.stringify(newMockUsers));
