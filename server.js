@@ -342,3 +342,30 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 }); // This closing bracket was missing
+
+
+// Después de la creación de la tabla users, añade esto:
+pool.query(`
+  CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(100) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`, (err, res) => {
+  if (err) {
+    console.error('Error creating password_reset_tokens table:', err);
+  } else {
+    console.log('Password reset tokens table ready');
+  }
+});
+
+// Añade esta configuración del transporter antes de tus rutas API
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // o cualquier otro servicio como 'hotmail', 'outlook', etc.
+  auth: {
+    user: 'tu-email@gmail.com', // reemplaza con tu email
+    pass: 'tu-contraseña-de-aplicación' // reemplaza con tu contraseña de aplicación
+  }
+});
