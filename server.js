@@ -9,14 +9,12 @@ const crypto = require('crypto');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configure email transporter
+// Configure email transporter for Gmail
 const transporter = nodemailer.createTransport({
-  host: 'smtp.sendgrid.net',
-  port: 587,
-  secure: false, // true for 465, false for other ports
+  service: 'gmail',
   auth: {
-    user: 'apikey', // always use 'apikey' as the user
-    pass: 'SG.your-sendgrid-api-key' // replace with your SendGrid API key
+    user: 'your-gmail@gmail.com',     // Replace with your Gmail address
+    pass: 'your-app-password'         // Replace with your Gmail app password
   }
 });
 
@@ -196,7 +194,7 @@ app.post('/api/recover-password', async (req, res) => {
     
     // Send email
     const mailOptions = {
-      from: 'noreply@yourdomain.com', // replace with your sender email
+      from: 'your-outlook-email@hotmail.com', // Replace with your actual Outlook/Hotmail email
       to: user.email,
       subject: 'Recuperación de contraseña',
       html: `
