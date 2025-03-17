@@ -246,11 +246,18 @@ async function deleteAccount() {
       })
     });
     
-    const data = await response.json();
-    
+    // Check if response is ok before trying to parse JSON
     if (!response.ok) {
-      throw new Error(data.error || 'Error al eliminar la cuenta');
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+      } else {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
     }
+    
+    const data = await response.json();
     
     // Account deleted successfully
     alert('Tu cuenta ha sido eliminada correctamente');
@@ -262,6 +269,6 @@ async function deleteAccount() {
     
   } catch (error) {
     console.error('Delete account error:', error);
-    alert(error.message || 'Error al eliminar la cuenta');
+    alert(`Error al eliminar la cuenta: ${error.message}`);
   }
-} // Added closing curly brace here
+}

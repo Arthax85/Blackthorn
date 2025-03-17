@@ -149,27 +149,32 @@ app.listen(PORT, () => {
 
 // Add a new endpoint to delete a user account
 app.post('/api/delete-account', (req, res) => {
-  const { email, password } = req.body;
-  
-  console.log('Delete account request for:', email);
-  
-  if (!email || !password) {
-    console.log('Missing email or password for account deletion');
-    return res.status(400).json({ error: 'Email and password are required' });
+  try {
+    const { email, password } = req.body;
+    
+    console.log('Delete account request for:', email);
+    
+    if (!email || !password) {
+      console.log('Missing email or password for account deletion');
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+    
+    let users = getUsers();
+    const userIndex = users.findIndex(user => user.email === email && user.password === password);
+    
+    if (userIndex === -1) {
+      console.log('Invalid credentials for account deletion:', email);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // Remove the user from the array
+    users.splice(userIndex, 1);
+    saveUsers(users);
+    
+    console.log('Account deleted successfully for:', email);
+    res.status(200).json({ message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  
-  let users = getUsers();
-  const userIndex = users.findIndex(user => user.email === email && user.password === password);
-  
-  if (userIndex === -1) {
-    console.log('Invalid credentials for account deletion:', email);
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-  
-  // Remove the user from the array
-  users.splice(userIndex, 1);
-  saveUsers(users);
-  
-  console.log('Account deleted successfully for:', email);
-  res.json({ message: 'Account deleted successfully' });
 });
