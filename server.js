@@ -198,24 +198,13 @@ app.post('/api/recover-password', async (req, res) => {
     const resetUrl = `https://blackthorn-auth.onrender.com/reset-password?token=${token}`;
     
     // Log the token for debugging
-    // For development/testing, return the token without attempting to send email
     console.log('Password reset token generated:', token);
     console.log('Reset URL:', resetUrl);
     
-    // Return the token for testing purposes
-    res.status(200).json({ 
-      message: `Se ha generado un enlace de recuperación. Por favor, utiliza el siguiente enlace:`,
-      debug: {
-        token: token,
-        resetUrl: resetUrl
-      }
-    });
-    
-    /* Comment out the email sending code until you have a valid API key
     // Prepare email content
     const msg = {
       to: user.email,
-      from: 'zerocult_new@hotmail.com', // Change this to your verified sender email
+      from: 'zerocult_new@hotmail.com', // Make sure this email is verified in SendGrid
       subject: 'Recuperación de contraseña',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -261,6 +250,17 @@ app.post('/api/recover-password', async (req, res) => {
         });
       }
     }
+    
+    // Remove this code that was returning the token directly
+    /*
+    // Return the token for testing purposes
+    res.status(200).json({ 
+      message: `Se ha generado un enlace de recuperación. Por favor, utiliza el siguiente enlace:`,
+      debug: {
+        token: token,
+        resetUrl: resetUrl
+      }
+    });
     */
     
   } catch (error) {
