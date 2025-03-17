@@ -217,19 +217,24 @@ app.post('/api/recover-password', async (req, res) => {
 app.get('/reset-password', (req, res) => {
   const token = req.query.token;
   
+  console.log('Reset password page requested with token:', token);
+  
   if (!token) {
+    console.log('No token provided, redirecting to home');
     return res.redirect('/');
   }
   
+  // Set proper content type
+  res.setHeader('Content-Type', 'text/html');
+  
   // Serve a special HTML page for password reset
-  res.send(`
+  const resetHtml = `
     <!DOCTYPE html>
     <html lang="es">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Restablecer Contraseña</title>
-      <link rel="stylesheet" href="styles.css">
       <style>
         body {
           font-family: Arial, sans-serif;
@@ -366,6 +371,7 @@ app.get('/reset-password', (req, res) => {
               messageDiv.style.display = 'block';
             }
           } catch (error) {
+            console.error('Error:', error);
             messageDiv.textContent = 'Error de conexión';
             messageDiv.className = 'message error';
             messageDiv.style.display = 'block';
@@ -374,7 +380,10 @@ app.get('/reset-password', (req, res) => {
       </script>
     </body>
     </html>
-  `);
+  `;
+  
+  console.log('Sending reset password HTML page');
+  res.send(resetHtml);
 });
 
 // Add a new endpoint to handle password reset
