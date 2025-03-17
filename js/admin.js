@@ -127,8 +127,13 @@ async function loadUsers() {
     try {
       console.log('Attempting to fetch users from real database');
       
-      // API URL - update to the correct endpoint structure
+      // API URL - using the correct endpoint for your Render-hosted API
+      // Note: This should be the URL to your API server, not directly to the database
       const API_URL = 'https://blackthorn-auth.onrender.com/api';
+      
+      // Log the request details for debugging
+      console.log('Making request to:', `${API_URL}/users`);
+      console.log('With token:', currentUser.token ? `${currentUser.token.substring(0, 10)}...` : 'No token');
       
       // Make the API request
       const response = await fetch(`${API_URL}/users`, {
