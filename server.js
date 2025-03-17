@@ -201,67 +201,30 @@ app.post('/api/recover-password', async (req, res) => {
     console.log('Password reset token generated:', token);
     console.log('Reset URL:', resetUrl);
     
-    // Prepare email content
-    const msg = {
-      to: user.email,
-      from: 'zerocult_new@hotmail.com', // Make sure this email is verified in SendGrid
-      subject: 'Recuperación de contraseña',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333; text-align: center;">Recuperación de contraseña</h1>
-          <p>Hola ${user.name},</p>
-          <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
-          <div style="text-align: center; margin: 25px 0;">
-            <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Restablecer contraseña</a>
-          </div>
-          <p>Este enlace expirará en 1 hora.</p>
-          <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
-          <p>Saludos,<br>El equipo de soporte</p>
-        </div>
-      `
-    };
-    
     try {
-      // Send the email
-      await sgMail.send(msg);
-      console.log('Password reset email sent to:', user.email);
+      // Skip email sending for now and return the token directly
+      console.log('Email sending skipped for testing purposes');
       
-      // Return success response without debug info in production
+      // Return the token for testing
       res.status(200).json({ 
-        message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.`
+        message: `Se ha generado un enlace de recuperación para ${user.email}.`,
+        debug: {
+          token: token,
+          resetUrl: resetUrl
+        }
       });
     } catch (emailError) {
       console.error('Error sending email:', emailError);
       
-      // For development/testing, still return the token
-      if (process.env.NODE_ENV !== 'production') {
-        res.status(200).json({ 
-          message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.`,
-          debug: {
-            token: token,
-            resetUrl: resetUrl,
-            emailError: emailError.message
-          }
-        });
-      } else {
-        // In production, don't expose the error but still return success
-        res.status(200).json({ 
-          message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.`
-        });
-      }
+      // Return the token for testing
+      res.status(200).json({ 
+        message: `Se ha generado un enlace de recuperación para ${user.email}.`,
+        debug: {
+          token: token,
+          resetUrl: resetUrl
+        }
+      });
     }
-    
-    // Remove this code that was returning the token directly
-    /*
-    // Return the token for testing purposes
-    res.status(200).json({ 
-      message: `Se ha generado un enlace de recuperación. Por favor, utiliza el siguiente enlace:`,
-      debug: {
-        token: token,
-        resetUrl: resetUrl
-      }
-    });
-    */
     
   } catch (error) {
     console.error('Password recovery error:', error);
