@@ -39,7 +39,7 @@ window.onload = function () {
 };
 
 // API URL - Change this to your Render deployed backend URL
-const API_URL = 'https://your-render-app-name.onrender.com/api';
+const API_URL = 'https://blackthorn-auth.onrender.com';
 
 // Function to handle login
 async function login(event) {
