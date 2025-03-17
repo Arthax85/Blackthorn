@@ -212,8 +212,14 @@ app.post('/api/recover-password', async (req, res) => {
     transporter.sendMail(mailOptions)
       .then(info => {
         console.log('Email sent:', info.response);
+        // For testing only - return the token directly
         res.status(200).json({ 
-          message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.` 
+          message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.`,
+          // Remove this in production
+          debug: {
+            token: token,
+            resetUrl: resetUrl
+          }
         });
       })
       .catch(error => {
