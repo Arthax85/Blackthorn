@@ -66,61 +66,108 @@ async function loadUsers() {
       throw new Error('No hay una sesión activa válida. Por favor, inicia sesión nuevamente.');
     }
     
-    // Check if we have stored mock users in localStorage
-    let mockUsers = [];
+    // Try to fetch users from the real API
     try {
-      const storedMockUsers = localStorage.getItem('mockUsers');
-      if (storedMockUsers) {
-        mockUsers = JSON.parse(storedMockUsers);
-        console.log('Loaded stored mock users:', mockUsers.length);
-      }
-    } catch (e) {
-      console.warn('Could not load stored mock users:', e);
-    }
-    
-    // If no stored mock users, create initial set
-    if (!mockUsers || mockUsers.length === 0) {
-      console.log('Creating initial mock users');
-      mockUsers = [
-        { 
-          id: 1, 
-          name: 'Usuario Regular', 
-          email: 'usuario@example.com', 
-          role: 'user', 
-          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days ago
-        },
-        { 
-          id: 2, 
-          name: currentUser.name || 'Admin', 
-          email: currentUser.email, 
-          role: 'admin', 
-          createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days ago
-        },
-        { 
-          id: 3, 
-          name: 'María López', 
-          email: 'maria@example.com', 
-          role: 'user', 
-          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days ago
-        },
-        { 
-          id: 4, 
-          name: 'Carlos Rodríguez', 
-          email: 'carlos@example.com', 
-          role: 'user', 
-          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() // 1 day ago
-        }
-      ];
+      console.log('Attempting to fetch users from real database');
       
-      // Store in localStorage for persistence
-      localStorage.setItem('mockUsers', JSON.stringify(mockUsers));
+      // API URL
+      const API_URL = 'https://blackthorn-auth.onrender.com/api';
+      
+      // Make the API request
+      const response = await fetch(`${API_URL}/users`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        }
+      });
+      
+      // Check if the request was successful
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.status}`);
+      }
+      
+      // Parse the response
+      const data = await response.json();
+      console.log('Users data from API:', data);
+      
+      // Handle different response formats
+      let users = [];
+      if (Array.isArray(data)) {
+        users = data;
+      } else if (data.users && Array.isArray(data.users)) {
+        users = data.users;
+      } else if (data.data && Array.isArray(data.data)) {
+        users = data.data;
+      } else {
+        throw new Error('Formato de respuesta inesperado');
+      }
+      
+      // Display the users
+      displayUsers(users);
+      
+    } catch (apiError) {
+      console.error('API error:', apiError);
+      
+      // Fall back to mock data if API fails
+      console.warn('Falling back to mock data due to API error');
+      
+      // Check if we have stored mock users in localStorage
+      let mockUsers = [];
+      try {
+        const storedMockUsers = localStorage.getItem('mockUsers');
+        if (storedMockUsers) {
+          mockUsers = JSON.parse(storedMockUsers);
+          console.log('Loaded stored mock users:', mockUsers.length);
+        }
+      } catch (e) {
+        console.warn('Could not load stored mock users:', e);
+      }
+      
+      // If no stored mock users, create initial set
+      if (!mockUsers || mockUsers.length === 0) {
+        console.log('Creating initial mock users');
+        mockUsers = [
+          { 
+            id: 1, 
+            name: 'Usuario Regular', 
+            email: 'usuario@example.com', 
+            role: 'user', 
+            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          { 
+            id: 2, 
+            name: currentUser.name || 'Admin', 
+            email: currentUser.email, 
+            role: 'admin', 
+            createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          { 
+            id: 3, 
+            name: 'María López', 
+            email: 'maria@example.com', 
+            role: 'user', 
+            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          { 
+            id: 4, 
+            name: 'Carlos Rodríguez', 
+            email: 'carlos@example.com', 
+            role: 'user', 
+            createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+          }
+        ];
+        
+        // Store in localStorage for persistence
+        localStorage.setItem('mockUsers', JSON.stringify(mockUsers));
+      }
+      
+      // Display the mock users
+      displayUsers(mockUsers);
+      
+      // Show a notification explaining the situation
+      showNotification(`Error al conectar con la base de datos: ${apiError.message}. Usando datos locales.`, 'warning');
     }
-    
-    // Display the mock users
-    displayUsers(mockUsers);
-    
-    // Show a notification explaining the situation
-    showNotification('Usando datos de ejemplo locales. Los cambios se guardarán en este navegador.', 'info');
     
   } catch (error) {
     console.error('Load users error:', error);
@@ -207,59 +254,117 @@ async function handleUserFormSubmit(event) {
       throw new Error('No hay una sesión activa');
     }
     
-    // Since we're using mock data, update the mock users in localStorage
-    let mockUsers = [];
+    // API URL
+    const API_URL = 'https://blackthorn-auth.onrender.com/api';
+    
+    let response;
+    
+    // Try to use the real API
     try {
-      const storedMockUsers = localStorage.getItem('mockUsers');
-      if (storedMockUsers) {
-        mockUsers = JSON.parse(storedMockUsers);
+      if (mode === 'add') {
+        // Create new user
+        response = await fetch(`${API_URL}/users`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentUser.token}`
+          },
+          body: JSON.stringify(userData)
+        });
+      } else {
+        // Update existing user
+        response = await fetch(`${API_URL}/users/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentUser.token}`
+          },
+          body: JSON.stringify(userData)
+        });
       }
-    } catch (e) {
-      console.warn('Could not load stored mock users:', e);
-      mockUsers = [];
-    }
-    
-    if (mode === 'add') {
-      // Create new user with a new ID
-      const newId = mockUsers.length > 0 ? Math.max(...mockUsers.map(u => u.id)) + 1 : 1;
-      const newUser = {
-        id: newId,
-        name: userData.name,
-        email: userData.email,
-        role: userData.role,
-        createdAt: new Date().toISOString()
-      };
-      mockUsers.push(newUser);
-      console.log('Added new mock user:', newUser);
-    } else {
-      // Update existing user
-      const userIndex = mockUsers.findIndex(u => u.id == userId);
-      if (userIndex === -1) {
-        throw new Error('Usuario no encontrado');
+      
+      // Check if the request was successful
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.status}`);
       }
-      mockUsers[userIndex] = {
-        ...mockUsers[userIndex],
-        name: userData.name,
-        email: userData.email,
-        role: userData.role
-      };
-      console.log('Updated mock user:', mockUsers[userIndex]);
-    }
-    
-    // Save updated mock users
-    localStorage.setItem('mockUsers', JSON.stringify(mockUsers));
-    
-    // Close modal
-    document.getElementById('user-modal').style.display = 'none';
-    
-    // Reload users to get fresh data
-    loadUsers();
-    
-    // Show success notification
-    if (mode === 'add') {
-      showNotification('Usuario agregado correctamente (datos locales)', 'success');
-    } else {
-      showNotification('Usuario actualizado correctamente (datos locales)', 'success');
+      
+      // Parse the response
+      const data = await response.json();
+      console.log('API response:', data);
+      
+      // Close modal
+      document.getElementById('user-modal').style.display = 'none';
+      
+      // Reload users to get fresh data
+      loadUsers();
+      
+      // Show success notification
+      if (mode === 'add') {
+        showNotification('Usuario agregado correctamente', 'success');
+      } else {
+        showNotification('Usuario actualizado correctamente', 'success');
+      }
+      
+    } catch (apiError) {
+      console.error('API error:', apiError);
+      
+      // Fall back to mock data if API fails
+      console.warn('Falling back to mock data due to API error');
+      
+      // Since we're using mock data, update the mock users in localStorage
+      let mockUsers = [];
+      try {
+        const storedMockUsers = localStorage.getItem('mockUsers');
+        if (storedMockUsers) {
+          mockUsers = JSON.parse(storedMockUsers);
+        }
+      } catch (e) {
+        console.warn('Could not load stored mock users:', e);
+        mockUsers = [];
+      }
+      
+      if (mode === 'add') {
+        // Create new user with a new ID
+        const newId = mockUsers.length > 0 ? Math.max(...mockUsers.map(u => u.id)) + 1 : 1;
+        const newUser = {
+          id: newId,
+          name: userData.name,
+          email: userData.email,
+          role: userData.role,
+          createdAt: new Date().toISOString()
+        };
+        mockUsers.push(newUser);
+        console.log('Added new mock user:', newUser);
+      } else {
+        // Update existing user
+        const userIndex = mockUsers.findIndex(u => u.id == userId);
+        if (userIndex === -1) {
+          throw new Error('Usuario no encontrado');
+        }
+        mockUsers[userIndex] = {
+          ...mockUsers[userIndex],
+          name: userData.name,
+          email: userData.email,
+          role: userData.role
+        };
+        console.log('Updated mock user:', mockUsers[userIndex]);
+      }
+      
+      // Save updated mock users
+      localStorage.setItem('mockUsers', JSON.stringify(mockUsers));
+      
+      // Close modal
+      document.getElementById('user-modal').style.display = 'none';
+      
+      // Reload users to get fresh data
+      loadUsers();
+      
+      // Show success notification
+      if (mode === 'add') {
+        showNotification('Usuario agregado correctamente (datos locales)', 'success');
+      } else {
+        showNotification('Usuario actualizado correctamente (datos locales)', 'success');
+      }
     }
     
   } catch (error) {
@@ -268,6 +373,7 @@ async function handleUserFormSubmit(event) {
   }
 }
 
+// Confirm delete user
 // Confirm delete user
 function confirmDeleteUser(userId) {
   const confirmDialog = document.getElementById('confirmation-dialog');
@@ -284,42 +390,77 @@ function confirmDeleteUser(userId) {
         throw new Error('No hay una sesión activa');
       }
       
-      // Since we're using mock data, update the mock users in localStorage
-      let mockUsers = [];
+      // API URL
+      const API_URL = 'https://blackthorn-auth.onrender.com/api';
+      
+      // Try to use the real API
       try {
-        const storedMockUsers = localStorage.getItem('mockUsers');
-        if (storedMockUsers) {
-          mockUsers = JSON.parse(storedMockUsers);
+        // Delete user
+        const response = await fetch(`${API_URL}/users/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentUser.token}`
+          }
+        });
+        
+        // Check if the request was successful
+        if (!response.ok) {
+          throw new Error(`Error del servidor: ${response.status}`);
         }
-      } catch (e) {
-        console.warn('Could not load stored mock users:', e);
-        mockUsers = [];
+        
+        // Close the confirmation dialog
+        confirmDialog.style.display = 'none';
+        
+        // Show success notification
+        showNotification('Usuario eliminado correctamente', 'success');
+        
+        // Reload users to refresh the table
+        loadUsers();
+        
+      } catch (apiError) {
+        console.error('API error:', apiError);
+        
+        // Fall back to mock data if API fails
+        console.warn('Falling back to mock data due to API error');
+        
+        // Since we're using mock data, update the mock users in localStorage
+        let mockUsers = [];
+        try {
+          const storedMockUsers = localStorage.getItem('mockUsers');
+          if (storedMockUsers) {
+            mockUsers = JSON.parse(storedMockUsers);
+          }
+        } catch (e) {
+          console.warn('Could not load stored mock users:', e);
+          mockUsers = [];
+        }
+        
+        // Don't allow deleting the current admin user
+        const userToDelete = mockUsers.find(u => u.id == userId);
+        if (!userToDelete) {
+          throw new Error('Usuario no encontrado');
+        }
+        
+        if (userToDelete.email === currentUser.email) {
+          throw new Error('No puedes eliminar tu propio usuario');
+        }
+        
+        // Remove the user from the array
+        const newMockUsers = mockUsers.filter(u => u.id != userId);
+        
+        // Save updated mock users
+        localStorage.setItem('mockUsers', JSON.stringify(newMockUsers));
+        
+        // Close the confirmation dialog
+        confirmDialog.style.display = 'none';
+        
+        // Show success notification
+        showNotification('Usuario eliminado correctamente (datos locales)', 'success');
+        
+        // Reload users to refresh the table
+        loadUsers();
       }
-      
-      // Don't allow deleting the current admin user
-      const userToDelete = mockUsers.find(u => u.id == userId);
-      if (!userToDelete) {
-        throw new Error('Usuario no encontrado');
-      }
-      
-      if (userToDelete.email === currentUser.email) {
-        throw new Error('No puedes eliminar tu propio usuario');
-      }
-      
-      // Remove the user from the array
-      const newMockUsers = mockUsers.filter(u => u.id != userId);
-      
-      // Save updated mock users
-      localStorage.setItem('mockUsers', JSON.stringify(newMockUsers));
-      
-      // Close the confirmation dialog
-      confirmDialog.style.display = 'none';
-      
-      // Show success notification
-      showNotification('Usuario eliminado correctamente (datos locales)', 'success');
-      
-      // Reload users to refresh the table
-      loadUsers();
       
     } catch (error) {
       console.error('Delete user error:', error);
