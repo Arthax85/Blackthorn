@@ -459,7 +459,24 @@ app.post('/api/delete-account', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+app.get('/api/users', async (req, res) => {
+  try {
+    // Verifica si el usuario es un administrador (puedes usar tu función isAdmin aquí)
+    const currentUser = req.user; // Asume que tienes un middleware que verifica la autenticación
+    if (!currentUser || currentUser.role !== 'admin') {
+      return res.status(403).json({ error: 'No tienes permisos para acceder a esta información' });
+    }
 
+    // Obtén todos los usuarios de la base de datos
+    const result = await pool.query('SELECT id, name, email, role, created_at FROM users');
+    
+    // Devuelve los usuarios en formato JSON
+    res.json({ users: result.rows });
+  } catch (error) {
+    console.error('Error al obtener usuarios:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
 // Add a test endpoint to check if the API is working
 app.get('/api/test', (req, res) => {
   res.json({ message: 'API is working' });
