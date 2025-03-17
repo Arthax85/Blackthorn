@@ -155,7 +155,7 @@ async function register(event) {
     
     // Registration successful
     alert('Usuario registrado correctamente');
-    document.getElementById('register-form').reset();
+    document.querySelector('#register-form form').reset();
     showLoginForm();
     
   } catch (error) {
