@@ -3,12 +3,24 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const path = require('path');
-// Keep nodemailer import for future use
-const nodemailer = require('nodemailer');
+// Replace the nodemailer import with SendGrid
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const { Pool } = require('pg');
+const path = require('path');
+// Remove nodemailer and add SendGrid
+// const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
 const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Set your SendGrid API key
+// You'll need to set this as an environment variable in your hosting environment
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || 'YOUR_SENDGRID_API_KEY';
+sgMail.setApiKey(SENDGRID_API_KEY);
 
 // Comment out the transporter configuration for now
 // const transporter = nodemailer.createTransport({
@@ -197,15 +209,55 @@ app.post('/api/recover-password', async (req, res) => {
     console.log('Password reset token generated:', token);
     console.log('Reset URL:', resetUrl);
     
-    // Return success response with token for testing
-    res.status(200).json({ 
-      message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.`,
-      // Include token for testing - remove in production
-      debug: {
-        token: token,
-        resetUrl: resetUrl
+    // Prepare email content
+    const msg = {
+      to: user.email,
+      from: 'your-verified-sender@example.com', // Change to your verified sender email in SendGrid
+      subject: 'Recuperación de contraseña',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #333; text-align: center;">Recuperación de contraseña</h1>
+          <p>Hola ${user.name},</p>
+          <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Restablecer contraseña</a>
+          </div>
+          <p>Este enlace expirará en 1 hora.</p>
+          <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+          <p>Saludos,<br>El equipo de soporte</p>
+        </div>
+      `
+    };
+    
+    try {
+      // Send the email
+      await sgMail.send(msg);
+      console.log('Password reset email sent to:', user.email);
+      
+      // Return success response without debug info in production
+      res.status(200).json({ 
+        message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.`
+      });
+    } catch (emailError) {
+      console.error('Error sending email:', emailError);
+      
+      // For development/testing, still return the token
+      if (process.env.NODE_ENV !== 'production') {
+        res.status(200).json({ 
+          message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.`,
+          debug: {
+            token: token,
+            resetUrl: resetUrl,
+            emailError: emailError.message
+          }
+        });
+      } else {
+        // In production, don't expose the error but still return success
+        res.status(200).json({ 
+          message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.`
+        });
       }
-    });
+    }
     
   } catch (error) {
     console.error('Password recovery error:', error);
