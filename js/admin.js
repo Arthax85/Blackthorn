@@ -463,7 +463,6 @@ async function handleUserFormSubmit(event) {
 }
 
 // Confirm delete user
-// Confirm delete user
 function confirmDeleteUser(userId) {
   const confirmDialog = document.getElementById('confirmation-dialog');
   const confirmMessage = document.getElementById('confirmation-message');
@@ -479,22 +478,29 @@ function confirmDeleteUser(userId) {
         throw new Error('No hay una sesión activa');
       }
       
+      // Get the user row to access the full user data
+      const userRow = document.querySelector(`.delete-btn[data-id="${userId}"]`).closest('tr');
+      const userData = JSON.parse(userRow.getAttribute('data-user'));
+      
       // API URL
       const API_URL = 'https://blackthorn-auth.onrender.com';
       
       // Try to use the real API
       try {
+        console.log(`Attempting to delete user with ID: ${userId}`);
+        
         // Delete user
         const response = await fetch(`${API_URL}/api/debug/users/${userId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'
-            // Removed Authorization header for debug endpoint
           }
         });
         
         // Check if the request was successful
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Delete error response:', errorText);
           throw new Error(`Error del servidor: ${response.status}`);
         }
         
@@ -585,7 +591,10 @@ function displayUsers(users, append = false) {
   }
   
   users.forEach(user => {
+    // Store the original user object as a data attribute for later use
     const row = document.createElement('tr');
+    row.setAttribute('data-user', JSON.stringify(user));
+    
     row.innerHTML = `
       <td>${user.id}</td>
       <td>${user.name}</td>
