@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 
 // Set your SendGrid API key
 // You'll need to set this as an environment variable in your hosting environment
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || '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';
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || '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';
 sgMail.setApiKey(SENDGRID_API_KEY);
 
 // Comment out the transporter configuration for now
@@ -198,9 +198,20 @@ app.post('/api/recover-password', async (req, res) => {
     const resetUrl = `https://blackthorn-auth.onrender.com/reset-password?token=${token}`;
     
     // Log the token for debugging
+    // For development/testing, return the token without attempting to send email
     console.log('Password reset token generated:', token);
     console.log('Reset URL:', resetUrl);
     
+    // Return the token for testing purposes
+    res.status(200).json({ 
+      message: `Se ha generado un enlace de recuperación. Por favor, utiliza el siguiente enlace:`,
+      debug: {
+        token: token,
+        resetUrl: resetUrl
+      }
+    });
+    
+    /* Comment out the email sending code until you have a valid API key
     // Prepare email content
     const msg = {
       to: user.email,
@@ -250,6 +261,7 @@ app.post('/api/recover-password', async (req, res) => {
         });
       }
     }
+    */
     
   } catch (error) {
     console.error('Password recovery error:', error);
