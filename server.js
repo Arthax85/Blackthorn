@@ -3,6 +3,8 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const path = require('path');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -130,43 +132,99 @@ app.post('/api/recover-password', async (req, res) => {
   }
   
   try {
-    // Log all emails in the database for debugging
-    const allUsers = await pool.query('SELECT email FROM users');
-    console.log('All emails in database:', allUsers.rows.map(u => u.email.toLowerCase()));
-    console.log('Looking for email:', email.toLowerCase());
-    
-    // Check if user exists with improved query
+    // Check if user exists
     const result = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email.trim()]);
     
     if (result.rows.length === 0) {
       console.log('User not found for password recovery:', email);
-      
-      // Try a more flexible search as a fallback
-      const fuzzyResult = await pool.query("SELECT * FROM users WHERE email ILIKE $1", [`%${email.trim()}%`]);
-      
-      if (fuzzyResult.rows.length > 0) {
-        console.log('Found similar emails:', fuzzyResult.rows.map(u => u.email));
-        return res.status(404).json({ 
-          error: 'El correo electrónico no está registrado exactamente como se ingresó. ¿Quizás usaste otro correo?' 
-        });
-      }
-      
       return res.status(404).json({ error: 'El correo electrónico no está registrado en el sistema' });
     }
-    
-    // In a real application, you would:
-    // 1. Generate a unique token
-    // 2. Store the token in the database with an expiration time
-    // 3. Send an email with a link containing the token
     
     const user = result.rows[0];
     console.log('User found for password recovery:', user.email);
     
-    res.status(200).json({ 
-      message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.` 
+    // Generate a unique token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1); // Token expires in 1 hour
+    
+    // Store the token in the database
+    await pool.query(
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
+      [user.id, token, expiresAt]
+    );
+    
+    // Create reset URL
+    const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${token}`;
+    
+    // Send email
+    const mailOptions = {
+      from: 'your-email@gmail.com', // replace with your email
+      to: user.email,
+      subject: 'Recuperación de contraseña',
+      html: `
+        <h1>Recuperación de contraseña</h1>
+        <p>Hola ${user.name},</p>
+        <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
+        <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Restablecer contraseña</a>
+        <p>Este enlace expirará en 1 hora.</p>
+        <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+        <p>Saludos,<br>El equipo de soporte</p>
+      `
+    };
+    
+    // Send the email
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending email:', error);
+        return res.status(500).json({ error: 'Error al enviar el correo electrónico' });
+      }
+      
+      console.log('Email sent:', info.response);
+      res.status(200).json({ 
+        message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.` 
+      });
     });
+    
   } catch (error) {
     console.error('Password recovery error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add a new endpoint to handle password reset
+app.post('/api/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: 'Token and new password are required' });
+  }
+  
+  try {
+    // Find the token in the database
+    const tokenResult = await pool.query(
+      'SELECT * FROM password_reset_tokens WHERE token = $1 AND expires_at > NOW()',
+      [token]
+    );
+    
+    if (tokenResult.rows.length === 0) {
+      return res.status(400).json({ error: 'Token inválido o expirado' });
+    }
+    
+    const tokenData = tokenResult.rows[0];
+    
+    // Update the user's password
+    await pool.query(
+      'UPDATE users SET password = $1 WHERE id = $2',
+      [newPassword, tokenData.user_id]
+    );
+    
+    // Delete the used token
+    await pool.query('DELETE FROM password_reset_tokens WHERE id = $1', [tokenData.id]);
+    
+    res.status(200).json({ message: 'Contraseña actualizada correctamente' });
+  } catch (error) {
+    console.error('Password reset error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
