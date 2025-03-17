@@ -1,6 +1,63 @@
 // Admin panel functionality
 console.log('Admin.js loaded successfully');
 
+// Fallback notification function in case notifications.js fails to load
+if (typeof showNotification !== 'function') {
+  console.warn('Notifications script not loaded, using fallback notification function');
+  
+  // Add fallback CSS for notifications
+  const notificationStyles = document.createElement('style');
+  notificationStyles.textContent = `
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      max-width: 400px;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+    .notification.info { background-color: #e7f3fe; border-left: 5px solid #2196F3; }
+    .notification.success { background-color: #e8f5e9; border-left: 5px solid #4CAF50; }
+    .notification.warning { background-color: #fffde7; border-left: 5px solid #FFC107; }
+    .notification.error { background-color: #ffebee; border-left: 5px solid #F44336; }
+    .notification-content { display: flex; justify-content: space-between; align-items: center; }
+    .notification-close { background: none; border: none; font-size: 20px; cursor: pointer; }
+  `;
+  document.head.appendChild(notificationStyles);
+  
+  function showNotification(message, type = 'info') {
+    console.log(`Notification (${type}): ${message}`);
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+      <div class="notification-content">
+        <span class="notification-message">${message}</span>
+        <button class="notification-close">&times;</button>
+      </div>
+    `;
+    
+    // Add to document
+    document.body.appendChild(notification);
+    
+    // Add event listener to close button
+    notification.querySelector('.notification-close').addEventListener('click', () => {
+      notification.remove();
+    });
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 5000);
+  }
+}
+
 // Function to check if user is admin (if not defined in auth.js)
 function isAdmin() {
   const currentUser = JSON.parse(localStorage.getItem('currentUser'));
