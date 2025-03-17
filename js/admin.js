@@ -127,20 +127,20 @@ async function loadUsers() {
     try {
       console.log('Attempting to fetch users from real database');
       
-      // API URL - using the debug endpoint
+      // API URL - using the real API endpoint
       const API_URL = 'https://blackthorn-auth.onrender.com';
       
       // Log the request details for debugging
-      console.log('Making request to:', `${API_URL}/api/debug/users`);
+      console.log('Making request to:', `${API_URL}/api/users`);
       console.log('With token:', currentUser.token ? `${currentUser.token.substring(0, 10)}...` : 'No token');
       
       // Make the API request
-      const response = await fetch(`${API_URL}/api/debug/users`, {
+      const response = await fetch(`${API_URL}/api/users`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`,
           'Accept': 'application/json'
-          // Removed Authorization header for debug endpoint
         }
       });
       
@@ -482,18 +482,19 @@ function confirmDeleteUser(userId) {
       const userRow = document.querySelector(`.delete-btn[data-id="${userId}"]`).closest('tr');
       const userData = JSON.parse(userRow.getAttribute('data-user'));
       
-      // API URL
+      // API URL - use the real API endpoint instead of debug
       const API_URL = 'https://blackthorn-auth.onrender.com';
       
       // Try to use the real API
       try {
         console.log(`Attempting to delete user with ID: ${userId}`);
         
-        // Delete user
-        const response = await fetch(`${API_URL}/api/debug/users/${userId}`, {
+        // Delete user - try the real API endpoint with authentication
+        const response = await fetch(`${API_URL}/api/users/${userId}`, {
           method: 'DELETE',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentUser.token}`
           }
         });
         
@@ -539,10 +540,13 @@ function confirmDeleteUser(userId) {
           mockUsers = [];
         }
         
-        // Don't allow deleting the current admin user
-        const userToDelete = mockUsers.find(u => u.id == userId);
+        // Find the user by email instead of ID (more reliable)
+        const userEmail = userData.email;
+        const userToDelete = mockUsers.find(u => u.email === userEmail);
+        
         if (!userToDelete) {
-          throw new Error('Usuario no encontrado');
+          console.error('User not found in mock data:', userData);
+          throw new Error('Usuario no encontrado en datos locales');
         }
         
         if (userToDelete.email === currentUser.email) {
@@ -550,7 +554,7 @@ function confirmDeleteUser(userId) {
         }
         
         // Remove the user from the array
-        const newMockUsers = mockUsers.filter(u => u.id != userId);
+        const newMockUsers = mockUsers.filter(u => u.email !== userEmail);
         
         // Save updated mock users
         localStorage.setItem('mockUsers', JSON.stringify(newMockUsers));
