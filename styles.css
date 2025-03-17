@@ -1,0 +1,240 @@
+body {
+    font-family: 'UnifrakturMaguntia', cursive;
+    background-color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    color: #ff0044;
+    text-shadow: 0 0 10px rgba(255, 0, 68, 0.8);
+    overflow: hidden;
+    background: radial-gradient(circle, #1a0011 0%, #000000 100%);
+}
+
+.logo-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 1000;
+    transition: all 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    display: flex;
+    align-items: center;
+}
+
+.logo-text {
+    color: #ff0044;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-left: 15px;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.8s ease;
+    text-shadow: 0 0 10px rgba(255, 0, 68, 0.8);
+    white-space: nowrap;
+}
+
+.show-text {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.logo-minimized .logo-text {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.logo-minimized {
+    top: 20px;
+    left: 20px;
+    transform: translate(0, 0);
+}
+
+.logo {
+    width: 150px;
+    height: auto;
+    transition: all 0.5s ease;
+}
+
+/* Nueva animación para la rosa */
+.animate-rose {
+    animation: roseAnimation 3s forwards;
+}
+
+@keyframes roseAnimation {
+    0% {
+        transform: scale(0) rotate(0deg);
+        opacity: 0;
+        filter: drop-shadow(0 0 0 rgba(255, 0, 68, 0));
+    }
+    20% {
+        transform: scale(1.2) rotate(180deg);
+        opacity: 1;
+        filter: drop-shadow(0 0 15px rgba(255, 0, 68, 0.8));
+    }
+    40% {
+        transform: scale(1) rotate(360deg);
+    }
+    60% {
+        transform: scale(1.1) rotate(540deg);
+    }
+    80% {
+        transform: scale(0.9) rotate(720deg);
+    }
+    100% {
+        transform: scale(0.3) translateY(-100px);
+        filter: drop-shadow(0 0 10px rgba(255, 0, 68, 0.5));
+    }
+}
+
+/* Efecto de pulso para la rosa minimizada */
+.pulse-effect {
+    width: 50px;
+    animation: pulse 2s infinite;
+    filter: drop-shadow(0 0 8px rgba(255, 0, 68, 0.7));
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 5px rgba(255, 0, 68, 0.5));
+    }
+    50% {
+        transform: scale(1.1);
+        filter: drop-shadow(0 0 15px rgba(255, 0, 68, 0.8));
+    }
+    100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 5px rgba(255, 0, 68, 0.5));
+    }
+}
+
+/* Animación para el título */
+.fade-in {
+    animation: fadeIn 1s forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Resto de los estilos existentes */
+.container {
+    background-color: rgba(0, 0, 0, 0.9);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(255, 0, 68, 0.5);
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+    border: 2px solid #ff0044;
+    position: relative;
+    opacity: 0;
+    transition: opacity 1s ease, transform 1s ease;
+    transform: translateY(20px);
+}
+
+.container.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Resto de los estilos sin cambios... */
+h1 {
+    margin-bottom: 20px;
+    color: #ff0044;
+    font-size: 2.5em;
+    text-shadow: 0 0 10px rgba(255, 0, 68, 0.8);
+    letter-spacing: 2px;
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: #ff0044;
+    font-size: 1.8em;
+    text-shadow: 0 0 10px rgba(255, 0, 68, 0.8);
+    letter-spacing: 1px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #ff0044;
+    font-size: 1.2em;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ff0044;
+    border-radius: 6px;
+    box-sizing: border-box;
+    background-color: #111;
+    color: #ff0044;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1em;
+    transition: box-shadow 0.3s ease;
+}
+
+input:focus {
+    border-color: #ff0044;
+    outline: none;
+    box-shadow: 0 0 10px rgba(255, 0, 68, 0.8);
+}
+
+button {
+    background-color: #ff0044;
+    color: #000;
+    border: 2px solid #ff0044;
+    padding: 14px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.2em;
+    margin-top: 20px;
+    width: 100%;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    font-family: 'Orbitron', sans-serif;
+}
+
+button:hover {
+    background-color: #cc0036;
+    transform: scale(1.05);
+}
+
+a {
+    color: #ff0044;
+    text-decoration: none;
+    font-size: 1.1em;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: #cc0036;
+}
+
+#user-info {
+    margin-top: 20px;
+    color: #ff0044;
+    font-size: 1.2em;
+}
+
+p {
+    margin: 10px 0;
+    color: #ff0044;
+}
