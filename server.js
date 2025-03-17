@@ -3,14 +3,6 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
 const path = require('path');
-// Replace the nodemailer import with SendGrid
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const { Pool } = require('pg');
-const path = require('path');
-// Remove nodemailer and add SendGrid
-// const nodemailer = require('nodemailer');
 const sgMail = require('@sendgrid/mail');
 const crypto = require('crypto');
 
