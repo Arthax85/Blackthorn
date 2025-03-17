@@ -9,8 +9,10 @@ const PORT = process.env.PORT || 3000;
 
 // PostgreSQL connection
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:your_password@localhost:5432/blackthorn',
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 // Test database connection
@@ -18,7 +20,7 @@ pool.query('SELECT NOW()', (err, res) => {
   if (err) {
     console.error('Database connection error:', err);
   } else {
-    console.log('Database connected successfully');
+    console.log('Database connected successfully at:', res.rows[0].now);
     
     // Create users table if it doesn't exist
     pool.query(`
