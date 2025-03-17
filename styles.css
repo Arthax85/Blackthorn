@@ -197,18 +197,35 @@ input:focus {
     box-shadow: 0 0 10px rgba(255, 0, 68, 0.8);
 }
 
-button {
-    background-color: #ff0044;
-    color: #000;
-    border: 2px solid #ff0044;
-    padding: 14px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1.2em;
-    margin-top: 20px;
-    width: 100%;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-    font-family: 'Orbitron', sans-serif;
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.delete-account-btn {
+  background-color: #ff0044;
+  color: #000;
+  border: 2px solid #ff0044;
+  padding: 14px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.2em;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.delete-account-btn:hover {
+  background-color: #cc0036;
+  transform: scale(1.05);
+}
+
+.sign-out-btn {
+  flex: 1;
+}
+
+.delete-account-btn {
+  flex: 1;
 }
 
 button:hover {

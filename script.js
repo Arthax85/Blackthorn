@@ -208,3 +208,60 @@ function showRegisterForm() {
 
 // Check for logged in user after animations
 setTimeout(checkLoggedInUser, 3500);
+
+// Function to confirm account deletion
+function confirmDeleteAccount() {
+  if (confirm('¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.')) {
+    deleteAccount();
+  }
+}
+
+// Function to delete account
+async function deleteAccount() {
+  const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+  
+  if (!currentUser || !currentUser.email) {
+    alert('No hay una sesión activa');
+    return;
+  }
+  
+  // Ask for password confirmation
+  const password = prompt('Por favor, ingresa tu contraseña para confirmar la eliminación de la cuenta:');
+  
+  if (!password) {
+    return; // User cancelled the prompt
+  }
+  
+  try {
+    const response = await fetch(`${API_URL}/delete-account`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify({ 
+        email: currentUser.email, 
+        password: password 
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Error al eliminar la cuenta');
+    }
+    
+    // Account deleted successfully
+    alert('Tu cuenta ha sido eliminada correctamente');
+    
+    // Sign out and redirect to login
+    localStorage.removeItem('currentUser');
+    document.getElementById('user-info').style.display = 'none';
+    document.getElementById('login-form').style.display = 'block';
+    
+  } catch (error) {
+    console.error('Delete account error:', error);
+    alert(error.message || 'Error al eliminar la cuenta');
+  }
+} // Added closing curly brace here

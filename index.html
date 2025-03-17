@@ -60,7 +60,10 @@
             <h2>Información del Usuario</h2>
             <p>Bienvenido, <span id="user-name"></span>!</p>
             <p>Email: <span id="user-email"></span></p>
-            <button onclick="signOut()">Cerrar sesión</button>
+            <div class="button-group">
+                <button onclick="signOut()" class="sign-out-btn">Cerrar sesión</button>
+                <button onclick="confirmDeleteAccount()" class="delete-account-btn">Eliminar cuenta</button>
+            </div>
         </div>
     </div>
 
