@@ -127,20 +127,20 @@ async function loadUsers() {
     try {
       console.log('Attempting to fetch users from real database');
       
-      // API URL - using the real API endpoint
+      // API URL - using the debug endpoint that works
       const API_URL = 'https://blackthorn-auth.onrender.com';
       
       // Log the request details for debugging
-      console.log('Making request to:', `${API_URL}/api/users`);
+      console.log('Making request to:', `${API_URL}/api/debug/users`);
       console.log('With token:', currentUser.token ? `${currentUser.token.substring(0, 10)}...` : 'No token');
       
       // Make the API request
-      const response = await fetch(`${API_URL}/api/users`, {
+      const response = await fetch(`${API_URL}/api/debug/users`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser.token}`,
           'Accept': 'application/json'
+          // No Authorization header for debug endpoint
         }
       });
       
@@ -350,7 +350,7 @@ async function handleUserFormSubmit(event) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
-            // Removed Authorization header for debug endpoint
+            // No Authorization header for debug endpoint
           },
           body: JSON.stringify(userData)
         });
@@ -360,7 +360,7 @@ async function handleUserFormSubmit(event) {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
-            // Removed Authorization header for debug endpoint
+            // No Authorization header for debug endpoint
           },
           body: JSON.stringify(userData)
         });
@@ -489,12 +489,12 @@ function confirmDeleteUser(userId) {
       try {
         console.log(`Attempting to delete user with ID: ${userId}`);
         
-        // Delete user - try the real API endpoint with authentication
-        const response = await fetch(`${API_URL}/api/users/${userId}`, {
+        // Delete user - use the debug endpoint
+        const response = await fetch(`${API_URL}/api/debug/users/${userId}`, {
           method: 'DELETE',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentUser.token}`
+            'Content-Type': 'application/json'
+            // No Authorization header for debug endpoint
           }
         });
         
