@@ -45,37 +45,84 @@ async function loadUsers() {
     const usersTable = document.getElementById('users-table-body');
     usersTable.innerHTML = '<tr><td colspan="6" class="loading-cell">Cargando usuarios...</td></tr>';
     
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (!currentUser || !currentUser.token) {
-      throw new Error('No hay una sesión activa');
+    // Get the API URL from the global variable or define it here
+    const API_URL = window.API_URL || 'https://blackthorn-auth.onrender.com/api';
+    
+    // Get current user from localStorage - with better error handling
+    let currentUser;
+    try {
+      const userData = localStorage.getItem('currentUser');
+      console.log('Raw user data from localStorage:', userData);
+      
+      if (!userData) {
+        throw new Error('No user data found in localStorage');
+      }
+      
+      currentUser = JSON.parse(userData);
+      console.log('Parsed current user:', currentUser);
+      
+      if (!currentUser || !currentUser.email) {
+        throw new Error('Invalid user data in localStorage');
+      }
+    } catch (userError) {
+      console.error('Error getting user data:', userError);
+      throw new Error('No hay una sesión activa válida. Por favor, inicia sesión nuevamente.');
     }
     
-    // API URL from auth.js - make sure this matches your backend URL
-    const API_URL = 'https://blackthorn-auth.onrender.com/api';
-    console.log('Fetching users from:', `${API_URL}/users`);
+    // For testing - use mock data if we're logged in but don't have a token
+    // In a real app, you would redirect to login instead
+    if (!currentUser.token) {
+      console.warn('No token found, using mock data');
+      const mockUsers = [
+        { id: 1, name: 'Usuario de Prueba (DATOS LOCALES)', email: 'test@example.com', role: 'user', createdAt: new Date() },
+        { id: 2, name: 'Admin (DATOS LOCALES)', email: 'zerocult_new@hotmail.com', role: 'admin', createdAt: new Date() }
+      ];
+      displayUsers(mockUsers);
+      return;
+    }
     
-    // Try a simpler endpoint first - just get all users
-    const response = await fetch(`${API_URL}/users`, {
+    // Try different endpoints to get users
+    let response;
+    let endpoint = '/users';
+    
+    // First try the /users endpoint
+    console.log('Trying to fetch from:', `${API_URL}${endpoint}`);
+    response = await fetch(`${API_URL}${endpoint}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'Authorization': `Bearer ${currentUser.token}`
-      }
+      },
+      credentials: 'include'
     });
     
     console.log('Response status:', response.status);
     
+    // If that fails, try the /admin/users endpoint
     if (!response.ok) {
-      if (response.status === 403) {
-        throw new Error('No tienes permisos para acceder a esta información');
-      }
-      throw new Error(`Error al obtener la lista de usuarios: ${response.status}`);
+      endpoint = '/admin/users';
+      console.log('Trying alternate endpoint:', `${API_URL}${endpoint}`);
+      response = await fetch(`${API_URL}${endpoint}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': currentUser.token ? `Bearer ${currentUser.token}` : ''
+        },
+        credentials: 'include'
+      });
+      console.log('Alternate endpoint response status:', response.status);
+    }
+    
+    if (!response.ok) {
+      throw new Error(`Error al obtener usuarios (${response.status}): ${await response.text()}`);
     }
     
     const data = await response.json();
     console.log('Users data received:', data);
     
-    // Check the structure of the response
+    // Handle different response formats
     let users = [];
     if (Array.isArray(data)) {
       users = data;
@@ -101,8 +148,10 @@ async function loadUsers() {
     const usersTable = document.getElementById('users-table-body');
     usersTable.innerHTML = `<tr><td colspan="6" class="error-cell">Error: ${error.message}</td></tr>`;
     
+    // Show notification with more details
+    showNotification(`Error al cargar usuarios: ${error.message}`, 'error');
+    
     // If API fails, show mock data as fallback but with clear indication
-    showNotification('Usando datos de prueba debido a un error de conexión', 'warning');
     const mockUsers = [
       { id: 1, name: 'Usuario de Prueba (DATOS LOCALES)', email: 'test@example.com', role: 'user', createdAt: new Date() },
       { id: 2, name: 'Admin (DATOS LOCALES)', email: 'zerocult_new@hotmail.com', role: 'admin', createdAt: new Date() }
