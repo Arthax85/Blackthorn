@@ -1,36 +1,84 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const cors = require('cors');
+const bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-app.use(bodyParser.json());
+// Middleware
 app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, '/')));
 
-let users = [];
+// File to store users (in a real app, use a database)
+const USERS_FILE = path.join(__dirname, 'users.json');
 
-// Endpoint para el registro
-app.post('/register', (req, res) => {
-    const { name, email, password } = req.body;
-    if (users.some(u => u.email === email)) {
-        return res.status(400).json({ message: 'Ya existe un usuario con ese email' });
-    }
-    users.push({ name, email, password });
-    res.status(201).json({ message: 'Usuario registrado correctamente' });
+// Initialize users file if it doesn't exist
+if (!fs.existsSync(USERS_FILE)) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify([]));
+}
+
+// Get users from file
+function getUsers() {
+  const data = fs.readFileSync(USERS_FILE);
+  return JSON.parse(data);
+}
+
+// Save users to file
+function saveUsers(users) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users));
+}
+
+// API Routes
+app.post('/api/register', (req, res) => {
+  const { name, email, password } = req.body;
+  
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+  
+  const users = getUsers();
+  
+  // Check if user already exists
+  if (users.some(user => user.email === email)) {
+    return res.status(400).json({ error: 'User already exists' });
+  }
+  
+  // Add new user
+  users.push({ name, email, password });
+  saveUsers(users);
+  
+  res.status(201).json({ message: 'User registered successfully' });
 });
 
-// Endpoint para el login
-app.post('/login', (req, res) => {
-    const { email, password } = req.body;
-    const user = users.find(u => u.email === email && u.password === password);
-    if (user) {
-        res.status(200).json({ message: 'Inicio de sesión exitoso', user });
-    } else {
-        res.status(401).json({ message: 'Email o contraseña incorrectos' });
-    }
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body;
+  
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+  
+  const users = getUsers();
+  
+  // Find user
+  const user = users.find(user => user.email === email && user.password === password);
+  
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  
+  // Return user info (excluding password)
+  const { password: _, ...userInfo } = user;
+  res.json(userInfo);
 });
 
-app.listen(port, () => {
-    console.log(`Servidor corriendo en http://localhost:${port}`);
+// Serve the main HTML file for all routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
