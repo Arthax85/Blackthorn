@@ -201,30 +201,11 @@ app.post('/api/recover-password', async (req, res) => {
     console.log('Password reset token generated:', token);
     console.log('Reset URL:', resetUrl);
     
-    try {
-      // Skip email sending for now and return the token directly
-      console.log('Email sending skipped for testing purposes');
-      
-      // Return the token for testing
-      res.status(200).json({ 
-        message: `Se ha generado un enlace de recuperación para ${user.email}.`,
-        debug: {
-          token: token,
-          resetUrl: resetUrl
-        }
-      });
-    } catch (emailError) {
-      console.error('Error sending email:', emailError);
-      
-      // Return the token for testing
-      res.status(200).json({ 
-        message: `Se ha generado un enlace de recuperación para ${user.email}.`,
-        debug: {
-          token: token,
-          resetUrl: resetUrl
-        }
-      });
-    }
+    // For development/testing, return the token directly
+    res.status(200).json({ 
+      message: `Se ha generado un enlace de recuperación para ${user.email}.`,
+      resetUrl: resetUrl
+    });
     
   } catch (error) {
     console.error('Password recovery error:', error);
