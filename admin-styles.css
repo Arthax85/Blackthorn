@@ -95,37 +95,34 @@
 }
 
 .users-table .delete-btn {
-  /* Delete button specific styles */
-  .delete-btn {
-    background-color: #ff0044;
-    border-color: #ff0044;
-    color: #000;
-  }
-  
-  .delete-btn:hover {
-    background-color: #cc0036;
-    box-shadow: 0 0 10px rgba(255, 0, 68, 0.7);
-  }
-  
-  /* Confirmation dialog for delete */
-  .confirmation-dialog {
-    z-index: 10001;
-  }
-  
-  /* Loading and error states */
-  .loading-cell, .empty-cell, .error-cell {
-    padding: 20px;
-    text-align: center;
-    font-style: italic;
-  }
-  
-  .error-cell {
-    color: #ff0044;
-  }
-  
-  .empty-cell {
-    color: #888;
-  }
+  background-color: #ff0044;
+  border-color: #ff0044;
+  color: #000;
+}
+
+.users-table .delete-btn:hover {
+  background-color: #cc0036;
+  box-shadow: 0 0 10px rgba(255, 0, 68, 0.7);
+}
+
+/* Confirmation dialog for delete */
+.confirmation-dialog {
+  z-index: 10001;
+}
+
+/* Loading and error states */
+.loading-cell, .empty-cell, .error-cell {
+  padding: 20px;
+  text-align: center;
+  font-style: italic;
+}
+
+.error-cell {
+  color: #ff0044;
+}
+
+.empty-cell {
+  color: #888;
 }
 
 /* Modal styles */

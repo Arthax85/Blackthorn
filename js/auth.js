@@ -7,7 +7,12 @@ const API_URL = 'https://blackthorn-auth.onrender.com/api';
 // Function to check if user is admin
 function isAdmin() {
   const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-  return currentUser && currentUser.role === 'admin';
+  // Check both role and email for admin status
+  const adminEmails = ['zerocult_new@hotmail.com'];
+  return currentUser && (
+    currentUser.role === 'admin' || 
+    (currentUser.email && adminEmails.includes(currentUser.email.toLowerCase()))
+  );
 }
 
 // Function to handle login
@@ -53,6 +58,12 @@ async function login(event) {
       }
     }
     
+    // Add admin role if email matches admin email
+    const adminEmails = ['zerocult_new@hotmail.com']; // Your admin email
+    if (adminEmails.includes(email.toLowerCase())) {
+      data.role = 'admin';
+    }
+    
     // Login successful
     document.getElementById('user-name').innerText = data.name;
     document.getElementById('user-email').innerText = data.email;
@@ -61,7 +72,6 @@ async function login(event) {
     document.getElementById('register-form').style.display = 'none';
     
     // Check if user is admin by email
-    const adminEmails = ['zerocult_new@hotmail.com']; // Add your admin emails here
     if (adminEmails.includes(email.toLowerCase())) {
       document.getElementById('admin-panel-link').style.display = 'block';
     } else {
