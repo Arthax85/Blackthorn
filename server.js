@@ -192,44 +192,17 @@ app.post('/api/recover-password', async (req, res) => {
     // Create reset URL - use your actual frontend URL
     const resetUrl = `https://blackthorn-auth.onrender.com/reset-password?token=${token}`;
     
-    // Send email
-    const mailOptions = {
-      from: 'your-outlook-email@hotmail.com', // Replace with your actual Outlook/Hotmail email
-      to: user.email,
-      subject: 'Recuperación de contraseña',
-      html: `
-        <h1>Recuperación de contraseña</h1>
-        <p>Hola ${user.name},</p>
-        <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
-        <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Restablecer contraseña</a>
-        <p>Este enlace expirará en 1 hora.</p>
-        <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
-        <p>Saludos,<br>El equipo de soporte</p>
-      `
-    };
+    // Skip email sending for now and just return the token directly
+    console.log('Password reset token generated:', token);
     
-    // Send the email and handle response
-    transporter.sendMail(mailOptions)
-      .then(info => {
-        console.log('Email sent:', info.response);
-        // For testing only - return the token directly
-        res.status(200).json({ 
-          message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.`,
-          // Remove this in production
-          debug: {
-            token: token,
-            resetUrl: resetUrl
-          }
-        });
-      })
-      .catch(error => {
-        console.error('Error sending email:', error);
-        // Still return success to user even if email fails
-        // This prevents email enumeration attacks
-        res.status(200).json({ 
-          message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.` 
-        });
-      });
+    res.status(200).json({ 
+      message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.`,
+      // Include token for testing - remove in production
+      debug: {
+        token: token,
+        resetUrl: resetUrl
+      }
+    });
     
   } catch (error) {
     console.error('Password recovery error:', error);
