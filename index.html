@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Autenticación</title>
+    <title>Blackthorn</title>
+    <!-- Make sure the CSS path is correct -->
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Just the relevant part that needs to be changed -->
+    <!-- Logo container outside the main container -->
     <div class="logo-container" id="logo-container">
         <img src="rosaoff.png" alt="Logo" class="logo" id="logo">
         <div class="logo-text">Blackthorn</div>
     </div>
 
     <div class="container" id="container" style="display: none;">
-        <h1 id="title"></h1>
+        <!-- Replaced text with small logo -->
+        <div class="title-container">
+            <img src="blackthornoff.png" alt="Logo" class="small-logo">
+        </div>
         
         <!-- Login Form -->
         <div id="login-form">
@@ -31,7 +35,6 @@
                 </div>
                 <button type="submit">Iniciar Sesión</button>
             </form>
-            <!-- In the login form, add this line after the login button -->
             <p>¿No tienes una cuenta? <a href="#" onclick="showRegisterForm()">Regístrate</a></p>
             <p>¿Olvidaste tu contraseña? <a href="#" onclick="showPasswordRecoveryForm()">Recuperar contraseña</a></p>
         </div>
@@ -62,38 +65,50 @@
             <h2>Información del Usuario</h2>
             <p>Bienvenido, <span id="user-name"></span>!</p>
             <p>Email: <span id="user-email"></span></p>
+            <!-- Admin panel link - hidden by default -->
+            <p id="admin-panel-link" style="display: none;">
+                <a href="admin.html" class="admin-link">Acceder al Panel de Administración</a>
+            </p>
             <div class="button-group">
                 <button onclick="signOut()" class="sign-out-btn">Cerrar sesión</button>
                 <button onclick="confirmDeleteAccount()" class="delete-account-btn">Eliminar cuenta</button>
             </div>
         </div>
-    </div>
-
-    <script src="script.js"></script>
-
-    <!-- Add this right before the closing body tag -->
-    <div id="confirmation-dialog" class="confirmation-dialog" style="display: none;">
-      <div class="confirmation-content">
-        <h3>Confirmar acción</h3>
-        <p id="confirmation-message">¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.</p>
-        <div class="confirmation-buttons">
-          <button id="confirm-yes" class="confirm-btn">Confirmar</button>
-          <button id="confirm-no" class="cancel-btn">Cancelar</button>
+        
+        <!-- Password Recovery Form -->
+        <div id="password-recovery-form" style="display: none;">
+            <h2>Recuperar Contraseña</h2>
+            <form onsubmit="recoverPassword(event)">
+                <div class="form-group">
+                    <label for="recovery-email">Email:</label>
+                    <input type="email" id="recovery-email" required>
+                </div>
+                <button type="submit">Enviar Enlace de Recuperación</button>
+            </form>
+            <p><a href="#" onclick="showLoginForm()">¿Recordaste tu contraseña? Iniciar sesión</a></p>
         </div>
-      </div>
     </div>
-    <!-- Add this after the register form div -->
-    <!-- Password Recovery Form -->
-    <div id="password-recovery-form" style="display: none;">
-        <h2>Recuperar Contraseña</h2>
-        <form onsubmit="recoverPassword(event)">
-            <div class="form-group">
-                <label for="recovery-email">Email:</label>
-                <input type="email" id="recovery-email" required>
+
+    <!-- Confirmation dialog -->
+    <div id="confirmation-dialog" class="confirmation-dialog" style="display: none;">
+        <div class="confirmation-content">
+            <h3>Confirmar acción</h3>
+            <p id="confirmation-message">¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.</p>
+            <div class="confirmation-buttons">
+                <button id="confirm-yes" class="confirm-btn">Confirmar</button>
+                <button id="confirm-no" class="cancel-btn">Cancelar</button>
             </div>
-            <button type="submit">Enviar Enlace de Recuperación</button>
-        </form>
-        <p>¿Recordaste tu contraseña? <a href="#" onclick="showLoginForm()">Iniciar sesión</a></p>
+        </div>
     </div>
+
+    <!-- Notification container -->
+    <div class="notification-container" id="notification-container"></div>
+
+    <!-- Scripts - Make sure paths are correct -->
+    <script src="js/notifications.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/animation.js"></script>
+    <!-- Remove the temporary login function -->
 </body>
 </html>

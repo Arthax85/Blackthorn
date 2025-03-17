@@ -1,0 +1,225 @@
+/* Admin Panel Styles */
+.admin-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.admin-btn {
+  flex: 1;
+  margin: 0 5px;
+  background-color: #ff0044;
+  color: #000;
+  border: 2px solid #ff0044;
+  padding: 12px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1em;
+  transition: all 0.3s ease;
+  font-family: 'Orbitron', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+
+.admin-btn.secondary {
+  background-color: transparent;
+  color: #ff0044;
+}
+
+.admin-btn:hover {
+  background-color: #cc0036;
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(255, 0, 68, 0.5);
+}
+
+.admin-btn.secondary:hover {
+  background-color: rgba(255, 0, 68, 0.2);
+}
+
+/* Users table styles */
+.users-table-container {
+  margin-top: 30px;
+  overflow-x: auto;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #ff0044;
+  text-align: left;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.users-table th, 
+.users-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid rgba(255, 0, 68, 0.3);
+}
+
+.users-table th {
+  background-color: rgba(255, 0, 68, 0.1);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.9em;
+}
+
+.users-table tr:hover {
+  background-color: rgba(255, 0, 68, 0.05);
+}
+
+.users-table .loading-cell,
+.users-table .empty-cell,
+.users-table .error-cell {
+  text-align: center;
+  padding: 30px;
+  font-style: italic;
+}
+
+.users-table .error-cell {
+  color: #ff0044;
+}
+
+/* Table buttons */
+.users-table button {
+  padding: 8px 12px;
+  margin: 0 5px;
+  font-size: 0.9em;
+  width: auto;
+}
+
+.users-table .edit-btn {
+  background-color: #4a90e2;
+  border-color: #4a90e2;
+}
+
+.users-table .delete-btn {
+  /* Delete button specific styles */
+  .delete-btn {
+    background-color: #ff0044;
+    border-color: #ff0044;
+    color: #000;
+  }
+  
+  .delete-btn:hover {
+    background-color: #cc0036;
+    box-shadow: 0 0 10px rgba(255, 0, 68, 0.7);
+  }
+  
+  /* Confirmation dialog for delete */
+  .confirmation-dialog {
+    z-index: 10001;
+  }
+  
+  /* Loading and error states */
+  .loading-cell, .empty-cell, .error-cell {
+    padding: 20px;
+    text-align: center;
+    font-style: italic;
+  }
+  
+  .error-cell {
+    color: #ff0044;
+  }
+  
+  .empty-cell {
+    color: #888;
+  }
+}
+
+/* Modal styles */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background-color: rgba(0, 0, 0, 0.9);
+  border: 2px solid #ff0044;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 0 20px rgba(255, 0, 68, 0.5);
+  animation: glow 1.5s infinite alternate;
+}
+
+.modal-content h3 {
+  color: #ff0044;
+  font-size: 1.8em;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px rgba(255, 0, 68, 0.8);
+  text-align: center;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+/* Form select styles */
+select {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ff0044;
+  border-radius: 6px;
+  box-sizing: border-box;
+  background-color: #111;
+  color: #ff0044;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.1em;
+  transition: box-shadow 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff0044' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+}
+
+select:focus {
+  border-color: #ff0044;
+  outline: none;
+  box-shadow: 0 0 10px rgba(255, 0, 68, 0.8);
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .users-table th:nth-child(1),
+  .users-table td:nth-child(1),
+  .users-table th:nth-child(5),
+  .users-table td:nth-child(5) {
+    display: none;
+  }
+  
+  .admin-controls {
+    flex-direction: column;
+  }
+  
+  .admin-btn {
+    margin: 5px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .users-table th:nth-child(4),
+  .users-table td:nth-child(4) {
+    display: none;
+  }
+  
+  .users-table button {
+    padding: 6px 8px;
+    font-size: 0.8em;
+  }
+}

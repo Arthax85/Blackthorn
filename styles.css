@@ -416,3 +416,17 @@ p {
   font-size: 1.1em;
   margin-bottom: 15px;
 }
+
+/* Small logo in title area */
+.title-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.small-logo {
+    width: 500px;
+    height: 500px;
+    margin: -100px 0;
+    filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.7));
+}

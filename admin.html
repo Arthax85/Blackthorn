@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Blackthorn</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin-styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Logo container -->
+    <div class="logo-container logo-minimized">
+        <img src="blackthornoff.png" alt="Logo" class="logo pulse-effect" id="logo">
+        <div class="logo-text show-text">Blackthorn</div>
+    </div>
+
+    <div class="container visible" id="admin-panel">
+        <div class="title-container">
+            <img src="blackthornoff.png" alt="Logo" class="small-logo">
+        </div>
+        
+        <h2>Panel de Administración</h2>
+        
+        <div class="admin-controls">
+            <button id="add-user-btn" class="admin-btn">Agregar Usuario</button>
+            <button id="back-to-dashboard" class="admin-btn secondary">Volver al Dashboard</button>
+        </div>
+        
+        <div class="users-table-container">
+            <h3>Gestión de Usuarios</h3>
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Fecha Registro</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="users-table-body">
+                    <tr>
+                        <td colspan="6" class="loading-cell">Cargando usuarios...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- User Modal -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Agregar Usuario</h3>
+            <form id="user-form" data-mode="add">
+                <div class="form-group">
+                    <label for="user-name">Nombre:</label>
+                    <input type="text" id="user-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-email">Email:</label>
+                    <input type="email" id="user-email" required>
+                </div>
+                <div class="form-group" id="password-group">
+                    <label for="user-password">Contraseña:</label>
+                    <input type="password" id="user-password" minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="user-role">Rol:</label>
+                    <select id="user-role" required>
+                        <option value="user">Usuario</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="confirm-btn">Guardar</button>
+                    <button type="button" class="cancel-btn" onclick="document.getElementById('user-modal').style.display='none'">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Confirmation dialog -->
+    <div id="confirmation-dialog" class="confirmation-dialog" style="display: none;">
+        <div class="confirmation-content">
+            <h3>Confirmar acción</h3>
+            <p id="confirmation-message">¿Estás seguro de que deseas realizar esta acción?</p>
+            <div class="confirmation-buttons">
+                <button id="confirm-yes" class="confirm-btn">Confirmar</button>
+                <button id="confirm-no" class="cancel-btn">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification container -->
+    <div class="notification-container" id="notification-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/notifications.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
