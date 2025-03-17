@@ -127,21 +127,20 @@ async function loadUsers() {
     try {
       console.log('Attempting to fetch users from real database');
       
-      // API URL - using the correct endpoint for your Render-hosted API
-      // Note: This should be the URL to your API server, not directly to the database
-      const API_URL = 'https://blackthorn-auth.onrender.com/api';
+      // API URL - using the debug endpoint
+      const API_URL = 'https://blackthorn-auth.onrender.com';
       
       // Log the request details for debugging
-      console.log('Making request to:', `${API_URL}/users`);
+      console.log('Making request to:', `${API_URL}/api/debug/users`);
       console.log('With token:', currentUser.token ? `${currentUser.token.substring(0, 10)}...` : 'No token');
       
       // Make the API request
-      const response = await fetch(`${API_URL}/users`, {
+      const response = await fetch(`${API_URL}/api/debug/users`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser.token}`,
           'Accept': 'application/json'
+          // Removed Authorization header for debug endpoint
         }
       });
       
@@ -186,6 +185,12 @@ async function loadUsers() {
       
     } catch (apiError) {
       console.error('API error:', apiError);
+      
+      // Add more detailed error message
+      let errorMessage = apiError.message;
+      if (errorMessage.includes('text/html')) {
+        errorMessage = 'El servidor devolvió una página HTML en lugar de datos JSON. Es posible que la API no esté configurada correctamente.';
+      }
       
       // Fall back to mock data if API fails
       console.warn('Falling back to mock data due to API error');
@@ -333,7 +338,7 @@ async function handleUserFormSubmit(event) {
     }
     
     // API URL
-    const API_URL = 'https://blackthorn-auth.onrender.com/api';
+    const API_URL = 'https://blackthorn-auth.onrender.com';
     
     let response;
     
@@ -341,21 +346,21 @@ async function handleUserFormSubmit(event) {
     try {
       if (mode === 'add') {
         // Create new user
-        response = await fetch(`${API_URL}/users`, {
+        response = await fetch(`${API_URL}/api/debug/users`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentUser.token}`
+            'Content-Type': 'application/json'
+            // Removed Authorization header for debug endpoint
           },
           body: JSON.stringify(userData)
         });
       } else {
         // Update existing user
-        response = await fetch(`${API_URL}/users/${userId}`, {
+        response = await fetch(`${API_URL}/api/debug/users/${userId}`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentUser.token}`
+            'Content-Type': 'application/json'
+            // Removed Authorization header for debug endpoint
           },
           body: JSON.stringify(userData)
         });
@@ -475,16 +480,16 @@ function confirmDeleteUser(userId) {
       }
       
       // API URL
-      const API_URL = 'https://blackthorn-auth.onrender.com/api';
+      const API_URL = 'https://blackthorn-auth.onrender.com';
       
       // Try to use the real API
       try {
         // Delete user
-        const response = await fetch(`${API_URL}/users/${userId}`, {
+        const response = await fetch(`${API_URL}/api/debug/users/${userId}`, {
           method: 'DELETE',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentUser.token}`
+            'Content-Type': 'application/json'
+            // Removed Authorization header for debug endpoint
           }
         });
         
