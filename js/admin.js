@@ -1,6 +1,17 @@
 // Admin panel functionality
 console.log('Admin.js loaded successfully');
 
+// Function to check if user is admin (if not defined in auth.js)
+function isAdmin() {
+  const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+  // Check both role and email for admin status
+  const adminEmails = ['zerocult_new@hotmail.com']; // Your admin email
+  return currentUser && (
+    currentUser.role === 'admin' || 
+    (currentUser.email && adminEmails.includes(currentUser.email.toLowerCase()))
+  );
+}
+
 // Initialize admin panel
 function initAdminPanel() {
   console.log('Initializing admin panel');
@@ -34,16 +45,140 @@ function initAdminPanel() {
   });
 }
 
-// Display users in the table
-function displayUsers(users) {
-  const usersTable = document.getElementById('users-table-body');
+// Show add user form
+function showAddUserForm() {
+  const modal = document.getElementById('user-modal');
+  const form = document.getElementById('user-form');
+  const title = document.getElementById('modal-title');
   
-  if (users.length === 0) {
-    usersTable.innerHTML = '<tr><td colspan="6" class="empty-cell">No hay usuarios registrados</td></tr>';
-    return;
+  title.textContent = 'Agregar Usuario';
+  form.reset();
+  form.setAttribute('data-mode', 'add');
+  
+  // Show password field for new users
+  document.getElementById('password-group').style.display = 'block';
+  
+  modal.style.display = 'flex';
+  
+  // Set up form submission
+  form.onsubmit = handleUserFormSubmit;
+}
+
+// Show edit user form
+function showEditUserForm(userId) {
+  const modal = document.getElementById('user-modal');
+  const form = document.getElementById('user-form');
+  const title = document.getElementById('modal-title');
+  
+  title.textContent = 'Editar Usuario';
+  form.reset();
+  form.setAttribute('data-mode', 'edit');
+  form.setAttribute('data-id', userId);
+  
+  // Hide password field for editing
+  document.getElementById('password-group').style.display = 'none';
+  
+  // Get user data from the table
+  const userRow = document.querySelector(`.delete-btn[data-id="${userId}"]`).closest('tr');
+  const userName = userRow.cells[1].textContent;
+  const userEmail = userRow.cells[2].textContent;
+  const userRole = userRow.cells[3].textContent;
+  
+  // Fill form with user data
+  document.getElementById('user-name').value = userName;
+  document.getElementById('user-email').value = userEmail;
+  document.getElementById('user-role').value = userRole;
+  
+  modal.style.display = 'flex';
+  
+  // Set up form submission
+  form.onsubmit = handleUserFormSubmit;
+}
+
+// Handle user form submission
+function handleUserFormSubmit(event) {
+  event.preventDefault();
+  
+  const form = event.target;
+  const mode = form.getAttribute('data-mode');
+  const userId = form.getAttribute('data-id');
+  
+  const userData = {
+    name: document.getElementById('user-name').value,
+    email: document.getElementById('user-email').value,
+    role: document.getElementById('user-role').value
+  };
+  
+  // Add password for new users
+  if (mode === 'add') {
+    userData.password = document.getElementById('user-password').value;
   }
   
-  usersTable.innerHTML = '';
+  // Close modal
+  document.getElementById('user-modal').style.display = 'none';
+  
+  // Show success notification
+  if (mode === 'add') {
+    showNotification('Usuario agregado correctamente', 'success');
+    
+    // Add the new user to the table with a mock ID
+    const mockId = Math.floor(Math.random() * 1000) + 10;
+    const mockUsers = [{
+      id: mockId,
+      name: userData.name,
+      email: userData.email,
+      role: userData.role,
+      createdAt: new Date()
+    }];
+    
+    // Add to existing table
+    displayUsers(mockUsers, true);
+  } else {
+    showNotification('Usuario actualizado correctamente', 'success');
+    
+    // Update the user in the table
+    const userRow = document.querySelector(`.delete-btn[data-id="${userId}"]`).closest('tr');
+    userRow.cells[1].textContent = userData.name;
+    userRow.cells[2].textContent = userData.email;
+    userRow.cells[3].textContent = userData.role;
+  }
+}
+
+// Confirm delete user
+function confirmDeleteUser(userId) {
+  const confirmDialog = document.getElementById('confirmation-dialog');
+  const confirmMessage = document.getElementById('confirmation-message');
+  
+  confirmMessage.textContent = '¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.';
+  confirmDialog.style.display = 'flex';
+  
+  // Set up confirmation buttons
+  document.getElementById('confirm-yes').onclick = () => {
+    // Remove the user from the table
+    const userRow = document.querySelector(`.delete-btn[data-id="${userId}"]`).closest('tr');
+    userRow.remove();
+    
+    confirmDialog.style.display = 'none';
+    showNotification('Usuario eliminado correctamente', 'success');
+  };
+  
+  document.getElementById('confirm-no').onclick = () => {
+    confirmDialog.style.display = 'none';
+  };
+}
+
+// Display users in the table
+function displayUsers(users, append = false) {
+  const usersTable = document.getElementById('users-table-body');
+  
+  if (!append) {
+    if (users.length === 0) {
+      usersTable.innerHTML = '<tr><td colspan="6" class="empty-cell">No hay usuarios registrados</td></tr>';
+      return;
+    }
+    
+    usersTable.innerHTML = '';
+  }
   
   users.forEach(user => {
     const row = document.createElement('tr');
