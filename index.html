@@ -70,6 +70,15 @@
     <script src="script.js"></script>
 
     <!-- Add this right before the closing body tag -->
-    <div id="notification-container" class="notification-container"></div>
+    <div id="confirmation-dialog" class="confirmation-dialog" style="display: none;">
+      <div class="confirmation-content">
+        <h3>Confirmar acción</h3>
+        <p id="confirmation-message">¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.</p>
+        <div class="confirmation-buttons">
+          <button id="confirm-yes" class="confirm-btn">Confirmar</button>
+          <button id="confirm-no" class="cancel-btn">Cancelar</button>
+        </div>
+      </div>
+    </div>
 </body>
 </html>

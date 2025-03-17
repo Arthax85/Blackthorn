@@ -169,10 +169,34 @@ async function register(event) {
     
     // In the confirmDeleteAccount function
     // Around line 190
+    // Replace the confirmDeleteAccount function with this custom version
     function confirmDeleteAccount() {
-      if (confirm('¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.')) {
+      const dialog = document.getElementById('confirmation-dialog');
+      const confirmBtn = document.getElementById('confirm-yes');
+      const cancelBtn = document.getElementById('confirm-no');
+      
+      // Show the dialog
+      dialog.style.display = 'flex';
+      
+      // Set up event listeners
+      const handleConfirm = () => {
+        dialog.style.display = 'none';
         deleteAccount();
-      }
+        // Clean up event listeners
+        confirmBtn.removeEventListener('click', handleConfirm);
+        cancelBtn.removeEventListener('click', handleCancel);
+      };
+      
+      const handleCancel = () => {
+        dialog.style.display = 'none';
+        // Clean up event listeners
+        confirmBtn.removeEventListener('click', handleConfirm);
+        cancelBtn.removeEventListener('click', handleCancel);
+      };
+      
+      // Add event listeners
+      confirmBtn.addEventListener('click', handleConfirm);
+      cancelBtn.addEventListener('click', handleCancel);
     }
     
     // In the deleteAccount function
@@ -235,68 +259,165 @@ function showRegisterForm() {
 // Check for logged in user after animations
 setTimeout(checkLoggedInUser, 3500);
 
-// Function to confirm account deletion
+// Function to confirm account deletion - replacing the old implementation
 function confirmDeleteAccount() {
-  if (confirm('¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.')) {
+  const dialog = document.getElementById('confirmation-dialog');
+  const confirmBtn = document.getElementById('confirm-yes');
+  const cancelBtn = document.getElementById('confirm-no');
+  
+  // Show the dialog
+  dialog.style.display = 'flex';
+  
+  // Set up event listeners
+  const handleConfirm = () => {
+    dialog.style.display = 'none';
     deleteAccount();
-  }
+    // Clean up event listeners
+    confirmBtn.removeEventListener('click', handleConfirm);
+    cancelBtn.removeEventListener('click', handleCancel);
+  };
+  
+  const handleCancel = () => {
+    dialog.style.display = 'none';
+    // Clean up event listeners
+    confirmBtn.removeEventListener('click', handleConfirm);
+    cancelBtn.removeEventListener('click', handleCancel);
+  };
+  
+  // Add event listeners
+  confirmBtn.addEventListener('click', handleConfirm);
+  cancelBtn.addEventListener('click', handleCancel);
 }
 
-// Function to delete account
+// Function to delete account - updating to handle incorrect password properly
 async function deleteAccount() {
   const currentUser = JSON.parse(localStorage.getItem('currentUser'));
   
   if (!currentUser || !currentUser.email) {
-    alert('No hay una sesión activa');
+    showNotification('No hay una sesión activa', 'error');
     return;
   }
   
-  // Ask for password confirmation
-  const password = prompt('Por favor, ingresa tu contraseña para confirmar la eliminación de la cuenta:');
+  // Create password dialog
+  const passwordDialog = document.createElement('div');
+  passwordDialog.className = 'confirmation-dialog';
+  passwordDialog.innerHTML = `
+    <div class="confirmation-content">
+      <h3>Confirmar eliminación</h3>
+      <p>Por favor, ingresa tu contraseña para confirmar la eliminación de la cuenta:</p>
+      <input type="password" id="delete-password" class="delete-password-input">
+      <p id="password-error" style="color: #ff0044; display: none; margin-top: 5px; font-size: 0.9em;">Contraseña incorrecta</p>
+      <div class="confirmation-buttons">
+        <button id="password-confirm" class="confirm-btn">Confirmar</button>
+        <button id="password-cancel" class="cancel-btn">Cancelar</button>
+      </div>
+    </div>
+  `;
   
-  if (!password) {
-    return; // User cancelled the prompt
-  }
+  document.body.appendChild(passwordDialog);
   
-  try {
-    const response = await fetch(`${API_URL}/delete-account`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      credentials: 'include',
-      body: JSON.stringify({ 
-        email: currentUser.email, 
-        password: password 
-      })
+  // Focus on password input
+  setTimeout(() => {
+    document.getElementById('delete-password').focus();
+  }, 100);
+  
+  return new Promise((resolve) => {
+    const confirmBtn = document.getElementById('password-confirm');
+    const cancelBtn = document.getElementById('password-cancel');
+    const passwordInput = document.getElementById('delete-password');
+    const passwordError = document.getElementById('password-error');
+    
+    const handleConfirm = async () => {
+      const password = passwordInput.value;
+      
+      if (!password) {
+        passwordError.textContent = 'Debes ingresar tu contraseña';
+        passwordError.style.display = 'block';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_URL}/delete-account`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ 
+            email: currentUser.email, 
+            password: password 
+          })
+        });
+        
+        // Check if response is ok before trying to parse JSON
+        if (!response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            
+            // Check if it's an invalid credentials error
+            if (response.status === 401) {
+              passwordError.textContent = 'Contraseña incorrecta';
+              passwordError.style.display = 'block';
+              passwordInput.value = '';
+              passwordInput.focus();
+              return;
+            }
+            
+            throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+          } else {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+          }
+        }
+        
+        const data = await response.json();
+        
+        // Remove dialog
+        document.body.removeChild(passwordDialog);
+        
+        // Account deleted successfully
+        showNotification('Tu cuenta ha sido eliminada correctamente', 'success');
+        
+        // Sign out and redirect to login
+        localStorage.removeItem('currentUser');
+        document.getElementById('user-info').style.display = 'none';
+        document.getElementById('login-form').style.display = 'block';
+        
+      } catch (error) {
+        console.error('Delete account error:', error);
+        
+        // If it's not an authentication error (which is handled above)
+        if (!passwordError.style.display || passwordError.style.display === 'none') {
+          document.body.removeChild(passwordDialog);
+          showNotification(`Error al eliminar la cuenta: ${error.message}`, 'error');
+        }
+      }
+      
+      resolve();
+    };
+    
+    const handleCancel = () => {
+      document.body.removeChild(passwordDialog);
+      resolve();
+    };
+    
+    // Add event listeners
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+    
+    // Allow Enter key to submit
+    passwordInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        handleConfirm();
+      }
     });
     
-    // Check if response is ok before trying to parse JSON
-    if (!response.ok) {
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await response.json();
-        throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
-      } else {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-    }
-    
-    const data = await response.json();
-    
-    // Account deleted successfully
-    alert('Tu cuenta ha sido eliminada correctamente');
-    
-    // Sign out and redirect to login
-    localStorage.removeItem('currentUser');
-    document.getElementById('user-info').style.display = 'none';
-    document.getElementById('login-form').style.display = 'block';
-    
-  } catch (error) {
-    console.error('Delete account error:', error);
-    alert(`Error al eliminar la cuenta: ${error.message}`);
-  }
+    // Hide error when typing
+    passwordInput.addEventListener('input', () => {
+      passwordError.style.display = 'none';
+    });
+  });
 }
 
 // Add this function to show notifications instead of alerts

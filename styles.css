@@ -230,9 +230,42 @@ input:focus {
   flex: 1;
 }
 
+/* Add or update button styles */
+button {
+  background-color: #ff0044;
+  color: #000;
+  border: 2px solid #ff0044;
+  padding: 14px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.2em;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  font-family: 'Orbitron', sans-serif;
+  width: 100%;
+  margin-top: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+
 button:hover {
-    background-color: #cc0036;
-    transform: scale(1.05);
+  background-color: #cc0036;
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(255, 0, 68, 0.5);
+}
+
+button:disabled {
+  background-color: #555;
+  border-color: #555;
+  color: #999;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Specific styles for form buttons */
+#login-form button, #register-form button {
+  margin-top: 20px;
 }
 
 a {
@@ -303,4 +336,83 @@ p {
 @keyframes glow {
   from { box-shadow: 0 0 5px rgba(255, 0, 68, 0.5); }
   to { box-shadow: 0 0 15px rgba(255, 0, 68, 0.8); }
+}
+
+/* Custom confirmation dialog */
+.confirmation-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease;
+}
+
+.confirmation-content {
+  background-color: rgba(0, 0, 0, 0.9);
+  border: 2px solid #ff0044;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(255, 0, 68, 0.5);
+  animation: glow 1.5s infinite alternate;
+}
+
+.confirmation-content h3 {
+  color: #ff0044;
+  font-size: 1.8em;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px rgba(255, 0, 68, 0.8);
+}
+
+.confirmation-content p {
+  margin-bottom: 25px;
+  font-size: 1.2em;
+}
+
+.confirmation-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.confirm-btn, .cancel-btn {
+  flex: 1;
+  padding: 12px 20px;
+}
+
+.confirm-btn {
+  background-color: #ff0044;
+  border-color: #ff0044;
+}
+
+.cancel-btn {
+  background-color: transparent;
+  border-color: #ff0044;
+  color: #ff0044;
+}
+
+.cancel-btn:hover {
+  background-color: rgba(255, 0, 68, 0.2);
+}
+
+.delete-password-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ff0044;
+  border-radius: 6px;
+  background-color: #111;
+  color: #ff0044;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.1em;
+  margin-bottom: 15px;
 }
