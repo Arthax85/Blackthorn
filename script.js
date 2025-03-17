@@ -99,10 +99,12 @@ async function login(event) {
     console.error('Login error:', error);
     
     // Check if it's a connection error
+    // In the login function, replace alert with showNotification
+    // Around line 88-95
     if (error.message.includes('connection') || error.message === 'Failed to fetch') {
-      alert('No se pudo conectar con el servidor. Por favor, intente de nuevo más tarde.');
+      showNotification('No se pudo conectar con el servidor. Por favor, intente de nuevo más tarde.', 'error');
     } else {
-      alert(error.message || 'Error al iniciar sesión');
+      showNotification(error.message || 'Error al iniciar sesión', 'error');
     }
     
     // Reset button if it wasn't reset
@@ -153,20 +155,44 @@ async function register(event) {
       throw new Error(data.error || 'Error al registrarse');
     }
     
+    // In the register function, replace alert with showNotification
+    // Around line 135
     // Registration successful
-    alert('Usuario registrado correctamente');
+    showNotification('Usuario registrado correctamente', 'success');
+    
+    // Around line 147-152
+    if (error.message.includes('connection') || error.message === 'Failed to fetch') {
+      showNotification('No se pudo conectar con el servidor. Por favor, intente de nuevo más tarde.', 'error');
+    } else {
+      showNotification(error.message || 'Error al registrarse', 'error');
+    }
+    
+    // In the confirmDeleteAccount function
+    // Around line 190
+    function confirmDeleteAccount() {
+      if (confirm('¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.')) {
+        deleteAccount();
+      }
+    }
+    
+    // In the deleteAccount function
+    // Around line 200
+    if (!currentUser || !currentUser.email) {
+      showNotification('No hay una sesión activa', 'error');
+      return;
+    }
+    
+    // Around line 240
+    // Account deleted successfully
+    showNotification('Tu cuenta ha sido eliminada correctamente', 'success');
+    
+    // Around line 250
+    showNotification(`Error al eliminar la cuenta: ${error.message}`, 'error');
     document.querySelector('#register-form form').reset();
     showLoginForm();
     
   } catch (error) {
     console.error('Registration error:', error);
-    
-    // Check if it's a connection error
-    if (error.message.includes('connection') || error.message === 'Failed to fetch') {
-      alert('No se pudo conectar con el servidor. Por favor, intente de nuevo más tarde.');
-    } else {
-      alert(error.message || 'Error al registrarse');
-    }
     
     // Reset button if it wasn't reset
     const registerButton = event.target.querySelector('button');
@@ -271,4 +297,30 @@ async function deleteAccount() {
     console.error('Delete account error:', error);
     alert(`Error al eliminar la cuenta: ${error.message}`);
   }
+}
+
+// Add this function to show notifications instead of alerts
+function showNotification(message, type = 'info', duration = 5000) {
+  const container = document.getElementById('notification-container');
+  
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  
+  // Add to container
+  container.appendChild(notification);
+  
+  // Remove after duration
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateY(-20px)';
+    notification.style.transition = 'opacity 0.3s, transform 0.3s';
+    
+    setTimeout(() => {
+      container.removeChild(notification);
+    }, 300);
+  }, duration);
+  
+  return notification;
 }

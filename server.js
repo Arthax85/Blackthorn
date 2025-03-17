@@ -98,14 +98,14 @@ app.post('/api/login', async (req, res) => {
     
     if (result.rows.length === 0) {
       console.log('User not found:', email);
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Usuario y/o contraseña incorrecta.' });
     }
     
     const user = result.rows[0];
     
     if (user.password !== password) {
-      console.log('Invalid password for:', email);
-      return res.status(401).json({ error: 'Invalid credentials' });
+      console.log('Contraseña incorrecta para:', email);
+      return res.status(401).json({ error: 'Usuario y/o contraseña incorrecta.' });
     }
     
     console.log('Successful login for:', email);
@@ -135,14 +135,14 @@ app.post('/api/delete-account', async (req, res) => {
     
     if (userResult.rows.length === 0) {
       console.log('User not found for deletion:', email);
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Usuario y/o contraseña incorrecta.' });
     }
     
     const user = userResult.rows[0];
     
     if (user.password !== password) {
-      console.log('Invalid password for account deletion:', email);
-      return res.status(401).json({ error: 'Invalid credentials' });
+      console.log('Contraseña incorrecta para eliminar esta cuenta:', email);
+      return res.status(401).json({ error: 'Usuario y/o contraseña incorrecta.' });
     }
     
     // Delete the user
