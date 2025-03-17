@@ -11,10 +11,21 @@ const PORT = process.env.PORT || 3000;
 
 // Configure email transporter
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.sendgrid.net',
+  port: 587,
+  secure: false, // true for 465, false for other ports
   auth: {
-    user: 'your-email@gmail.com', // Replace with your actual email
-    pass: 'your-app-password'     // Replace with your app password
+    user: 'apikey', // always use 'apikey' as the user
+    pass: 'SG.your-sendgrid-api-key' // replace with your SendGrid API key
+  }
+});
+
+// Test the transporter
+transporter.verify(function(error, success) {
+  if (error) {
+    console.error('Email transporter error:', error);
+  } else {
+    console.log('Email server is ready to send messages');
   }
 });
 
@@ -169,17 +180,6 @@ app.post('/api/recover-password', async (req, res) => {
     const user = result.rows[0];
     console.log('User found for password recovery:', user.email);
     
-    // For simplicity, let's just return success without actually sending an email
-    // This avoids the need to set up real email credentials
-    console.log('Would send password recovery email to:', user.email);
-    
-    res.status(200).json({ 
-      message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.` 
-    });
-    
-    /* 
-    // Uncomment this section when you have real email credentials
-    
     // Generate a unique token
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date();
@@ -191,12 +191,12 @@ app.post('/api/recover-password', async (req, res) => {
       [user.id, token, expiresAt]
     );
     
-    // Create reset URL
-    const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${token}`;
+    // Create reset URL - use your actual frontend URL
+    const resetUrl = `https://blackthorn-auth.onrender.com/reset-password?token=${token}`;
     
     // Send email
     const mailOptions = {
-      from: 'your-email@gmail.com',
+      from: 'noreply@yourdomain.com', // replace with your sender email
       to: user.email,
       subject: 'Recuperación de contraseña',
       html: `
@@ -210,18 +210,22 @@ app.post('/api/recover-password', async (req, res) => {
       `
     };
     
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
+    // Send the email and handle response
+    transporter.sendMail(mailOptions)
+      .then(info => {
+        console.log('Email sent:', info.response);
+        res.status(200).json({ 
+          message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.` 
+        });
+      })
+      .catch(error => {
         console.error('Error sending email:', error);
-        return res.status(500).json({ error: 'Error al enviar el correo electrónico' });
-      }
-      
-      console.log('Email sent:', info.response);
-      res.status(200).json({ 
-        message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.` 
+        // Still return success to user even if email fails
+        // This prevents email enumeration attacks
+        res.status(200).json({ 
+          message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.` 
+        });
       });
-    });
-    */
     
   } catch (error) {
     console.error('Password recovery error:', error);
