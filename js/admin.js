@@ -29,20 +29,68 @@ function initAdminPanel() {
   
   console.log('Admin access granted, loading users');
   
-  // Mock data for testing if API is not available
-  const mockUsers = [
-    { id: 1, name: 'Usuario de Prueba', email: 'test@example.com', role: 'user', createdAt: new Date() },
-    { id: 2, name: 'Admin', email: 'zerocult_new@hotmail.com', role: 'admin', createdAt: new Date() }
-  ];
-  
-  // Display mock data if API call fails
-  displayUsers(mockUsers);
+  // Load real users from database
+  loadUsers();
   
   // Set up event listeners
   document.getElementById('add-user-btn').addEventListener('click', showAddUserForm);
   document.getElementById('back-to-dashboard').addEventListener('click', () => {
     window.location.href = 'index.html';
   });
+}
+
+// Load all users from the database
+async function loadUsers() {
+  try {
+    const usersTable = document.getElementById('users-table-body');
+    usersTable.innerHTML = '<tr><td colspan="6" class="loading-cell">Cargando usuarios...</td></tr>';
+    
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser || !currentUser.token) {
+      throw new Error('No hay una sesión activa');
+    }
+    
+    // API URL from auth.js
+    const API_URL = 'https://blackthorn-auth.onrender.com/api';
+    
+    const response = await fetch(`${API_URL}/admin/users`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentUser.token}`
+      }
+    });
+    
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error('No tienes permisos para acceder a esta información');
+      }
+      throw new Error('Error al obtener la lista de usuarios');
+    }
+    
+    const data = await response.json();
+    console.log('Users data:', data);
+    
+    if (!data.users || data.users.length === 0) {
+      usersTable.innerHTML = '<tr><td colspan="6" class="empty-cell">No hay usuarios registrados</td></tr>';
+      return;
+    }
+    
+    displayUsers(data.users);
+    
+  } catch (error) {
+    console.error('Load users error:', error);
+    const usersTable = document.getElementById('users-table-body');
+    usersTable.innerHTML = `<tr><td colspan="6" class="error-cell">Error: ${error.message}</td></tr>`;
+    
+    // If API fails, show mock data as fallback
+    console.log('Showing mock data as fallback');
+    const mockUsers = [
+      { id: 1, name: 'Usuario de Prueba', email: 'test@example.com', role: 'user', createdAt: new Date() },
+      { id: 2, name: 'Admin', email: 'zerocult_new@hotmail.com', role: 'admin', createdAt: new Date() }
+    ];
+    displayUsers(mockUsers);
+  }
 }
 
 // Show add user form
@@ -96,7 +144,7 @@ function showEditUserForm(userId) {
 }
 
 // Handle user form submission
-function handleUserFormSubmit(event) {
+async function handleUserFormSubmit(event) {
   event.preventDefault();
   
   const form = event.target;
@@ -114,36 +162,67 @@ function handleUserFormSubmit(event) {
     userData.password = document.getElementById('user-password').value;
   }
   
-  // Close modal
-  document.getElementById('user-modal').style.display = 'none';
-  
-  // Show success notification
-  if (mode === 'add') {
-    showNotification('Usuario agregado correctamente', 'success');
+  try {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser || !currentUser.token) {
+      throw new Error('No hay una sesión activa');
+    }
     
-    // Add the new user to the table with a mock ID
-    const mockId = Math.floor(Math.random() * 1000) + 10;
-    const mockUsers = [{
-      id: mockId,
-      name: userData.name,
-      email: userData.email,
-      role: userData.role,
-      createdAt: new Date()
-    }];
+    // API URL from auth.js
+    const API_URL = 'https://blackthorn-auth.onrender.com/api';
     
-    // Add to existing table
-    displayUsers(mockUsers, true);
-  } else {
-    showNotification('Usuario actualizado correctamente', 'success');
+    let response;
     
-    // Update the user in the table
-    const userRow = document.querySelector(`.delete-btn[data-id="${userId}"]`).closest('tr');
-    userRow.cells[1].textContent = userData.name;
-    userRow.cells[2].textContent = userData.email;
-    userRow.cells[3].textContent = userData.role;
+    if (mode === 'add') {
+      // Create new user
+      response = await fetch(`${API_URL}/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        },
+        body: JSON.stringify(userData)
+      });
+    } else {
+      // Update existing user
+      response = await fetch(`${API_URL}/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        },
+        body: JSON.stringify(userData)
+      });
+    }
+    
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error('No tienes permisos para esta acción');
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error en la operación');
+    }
+    
+    // Close modal
+    document.getElementById('user-modal').style.display = 'none';
+    
+    // Reload users to get fresh data
+    loadUsers();
+    
+    // Show success notification
+    if (mode === 'add') {
+      showNotification('Usuario agregado correctamente', 'success');
+    } else {
+      showNotification('Usuario actualizado correctamente', 'success');
+    }
+    
+  } catch (error) {
+    console.error('Form submission error:', error);
+    showNotification(error.message, 'error');
   }
 }
 
+// Confirm delete user
 // Confirm delete user
 function confirmDeleteUser(userId) {
   const confirmDialog = document.getElementById('confirmation-dialog');
@@ -153,13 +232,43 @@ function confirmDeleteUser(userId) {
   confirmDialog.style.display = 'flex';
   
   // Set up confirmation buttons
-  document.getElementById('confirm-yes').onclick = () => {
-    // Remove the user from the table
-    const userRow = document.querySelector(`.delete-btn[data-id="${userId}"]`).closest('tr');
-    userRow.remove();
-    
-    confirmDialog.style.display = 'none';
-    showNotification('Usuario eliminado correctamente', 'success');
+  document.getElementById('confirm-yes').onclick = async () => {
+    try {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      if (!currentUser || !currentUser.token) {
+        throw new Error('No hay una sesión activa');
+      }
+      
+      // API URL from auth.js
+      const API_URL = 'https://blackthorn-auth.onrender.com/api';
+      
+      const response = await fetch(`${API_URL}/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('No tienes permisos para eliminar usuarios');
+        }
+        throw new Error('Error al eliminar el usuario');
+      }
+      
+      // Remove the user from the table
+      const userRow = document.querySelector(`.delete-btn[data-id="${userId}"]`).closest('tr');
+      userRow.remove();
+      
+      confirmDialog.style.display = 'none';
+      showNotification('Usuario eliminado correctamente', 'success');
+      
+    } catch (error) {
+      console.error('Delete user error:', error);
+      showNotification(error.message, 'error');
+      confirmDialog.style.display = 'none';
+    }
   };
   
   document.getElementById('confirm-no').onclick = () => {
