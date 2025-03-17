@@ -127,26 +127,36 @@ async function loadUsers() {
     try {
       console.log('Attempting to fetch users from real database');
       
-      // API URL
-      const API_URL = 'https://blackthorn-auth.onrender.com/api';
+      // API URL - update to use the correct endpoint for your PostgreSQL database on Render
+      const API_URL = 'https://blackthorn-auth.onrender.com/api/admin';
       
       // Make the API request
       const response = await fetch(`${API_URL}/users`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser.token}`
-        }
+          'Authorization': `Bearer ${currentUser.token}`,
+          'Accept': 'application/json'
+        },
+        credentials: 'include' // Include cookies if your API uses session-based auth
       });
+      
+      // Log response details for debugging
+      console.log('API Response status:', response.status);
+      console.log('API Response headers:', [...response.headers.entries()]);
       
       // Check if the request was successful
       if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
+        throw new Error(`Error del servidor: ${response.status} - ${response.statusText}`);
       }
       
       // Check content type to ensure we're getting JSON
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
+        const bodyText = await response.text();
+        console.error('Non-JSON response body:', bodyText.substring(0, 500) + '...');
         throw new Error(`Respuesta no válida: esperaba JSON pero recibió ${contentType || 'unknown'}`);
       }
       
@@ -163,6 +173,7 @@ async function loadUsers() {
       } else if (data.data && Array.isArray(data.data)) {
         users = data.data;
       } else {
+        console.error('Unexpected response format:', data);
         throw new Error('Formato de respuesta inesperado');
       }
       
