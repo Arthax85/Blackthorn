@@ -127,19 +127,20 @@ async function loadUsers() {
     try {
       console.log('Attempting to fetch users from real database');
       
-      // API URL - try the debug endpoint first
+      // API URL - use the real API endpoint
       const API_URL = 'https://blackthorn-auth.onrender.com';
       
       // Log the request details for debugging
-      console.log('Making request to:', `${API_URL}/api/debug/users`);
+      console.log('Making request to:', `${API_URL}/api/users`);
       console.log('With token:', currentUser.token ? `${currentUser.token.substring(0, 10)}...` : 'No token');
       
-      // Make the API request to the debug endpoint without authentication
-      const response = await fetch(`${API_URL}/api/debug/users`, {
+      // Make the API request to the real endpoint with authentication
+      const response = await fetch(`${API_URL}/api/users`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
         }
       });
       
@@ -184,71 +185,11 @@ async function loadUsers() {
       
     } catch (apiError) {
       console.error('API error:', apiError);
+      const usersTable = document.getElementById('users-table-body');
+      usersTable.innerHTML = `<tr><td colspan="6" class="error-cell">Error de conexión: ${apiError.message}</td></tr>`;
       
-      // Add more detailed error message
-      let errorMessage = apiError.message;
-      if (errorMessage.includes('text/html')) {
-        errorMessage = 'El servidor devolvió una página HTML en lugar de datos JSON. Es posible que la API no esté configurada correctamente.';
-      }
-      
-      // Fall back to mock data if API fails
-      console.warn('Falling back to mock data due to API error');
-      
-      // Check if we have stored mock users in localStorage
-      let mockUsers = [];
-      try {
-        const storedMockUsers = localStorage.getItem('mockUsers');
-        if (storedMockUsers) {
-          mockUsers = JSON.parse(storedMockUsers);
-          console.log('Loaded stored mock users:', mockUsers.length);
-        }
-      } catch (e) {
-        console.warn('Could not load stored mock users:', e);
-      }
-      
-      // If no stored mock users, create initial set
-      if (!mockUsers || mockUsers.length === 0) {
-        console.log('Creating initial mock users');
-        mockUsers = [
-          { 
-            id: 1, 
-            name: 'Usuario Regular', 
-            email: 'usuario@example.com', 
-            role: 'user', 
-            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          { 
-            id: 2, 
-            name: currentUser.name || 'Admin', 
-            email: currentUser.email, 
-            role: 'admin', 
-            createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          { 
-            id: 3, 
-            name: 'María López', 
-            email: 'maria@example.com', 
-            role: 'user', 
-            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          { 
-            id: 4, 
-            name: 'Carlos Rodríguez', 
-            email: 'carlos@example.com', 
-            role: 'user', 
-            createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-          }
-        ];
-        
-        // Store in localStorage for persistence
-        localStorage.setItem('mockUsers', JSON.stringify(mockUsers));
-      }
-      
-      // Display the mock users
-      displayUsers(mockUsers);
-      
-      // Show a notification explaining the situation
-      showNotification(`Error al conectar con la base de datos: ${apiError.message}. Usando datos locales.`, 'warning');
+      // Show notification with more details
+      showNotification(`Error al conectar con la base de datos: ${apiError.message}`, 'error');
     }
     
   } catch (error) {
@@ -341,23 +282,25 @@ async function handleUserFormSubmit(event) {
     
     let response;
     
-    // Try to use the real API with authentication
+    // Use the real API with authentication
     try {
       if (mode === 'add') {
-        // Create new user - use debug endpoint
-        response = await fetch(`${API_URL}/api/debug/users`, {
+        // Create new user
+        response = await fetch(`${API_URL}/api/users`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentUser.token}`
           },
           body: JSON.stringify(userData)
         });
       } else {
-        // Update existing user - use debug endpoint
-        response = await fetch(`${API_URL}/api/debug/users/${userId}`, {
+        // Update existing user
+        response = await fetch(`${API_URL}/api/users/${userId}`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentUser.token}`
           },
           body: JSON.stringify(userData)
         });
@@ -372,13 +315,10 @@ async function handleUserFormSubmit(event) {
       
       // Check content type to ensure we're getting JSON
       const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Respuesta no válida: esperaba JSON pero recibió ${contentType || 'unknown'}`);
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        console.log('API response:', data);
       }
-      
-      // Parse the response
-      const data = await response.json();
-      console.log('API response:', data);
       
       // Close modal
       document.getElementById('user-modal').style.display = 'none';
@@ -447,11 +387,12 @@ function confirmDeleteUser(userId) {
       try {
         console.log(`Attempting to delete user with ID: ${userId}`);
         
-        // Delete user - use the debug endpoint without authentication
-        const response = await fetch(`${API_URL}/api/debug/users/${userId}`, {
+        // Delete user - use the real API endpoint with authentication
+        const response = await fetch(`${API_URL}/api/users/${userId}`, {
           method: 'DELETE',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentUser.token}`
           }
         });
         
@@ -481,76 +422,8 @@ function confirmDeleteUser(userId) {
         
       } catch (apiError) {
         console.error('API error:', apiError);
-        
-        // Fall back to mock data if API fails
-        console.warn('Falling back to mock data due to API error');
-        
-        // Since we're using mock data, update the mock users in localStorage
-        let mockUsers = [];
-        try {
-          const storedMockUsers = localStorage.getItem('mockUsers');
-          if (storedMockUsers) {
-            mockUsers = JSON.parse(storedMockUsers);
-          }
-        } catch (e) {
-          console.warn('Could not load stored mock users:', e);
-          mockUsers = [];
-        }
-        
-        // Try to find the user by ID first, then by email if ID fails
-        let userToDelete = mockUsers.find(u => u.id == userId);
-        let userIdToDelete = userId;
-        
-        if (!userToDelete && userData.email) {
-          console.log('User not found by ID, trying by email:', userData.email);
-          userToDelete = mockUsers.find(u => u.email === userData.email);
-          if (userToDelete) {
-            userIdToDelete = userToDelete.id;
-            console.log('Found user by email with ID:', userIdToDelete);
-          }
-        }
-        
-        if (!userToDelete) {
-          // If we still can't find the user, add it to mock data first
-          console.log('User not found in mock data, adding it first:', userData);
-          userToDelete = {
-            id: parseInt(userId),
-            name: userData.name,
-            email: userData.email,
-            role: userData.role || 'user',
-            createdAt: new Date().toISOString()
-          };
-          mockUsers.push(userToDelete);
-        }
-        
-        if (userToDelete.email === currentUser.email) {
-          throw new Error('No puedes eliminar tu propio usuario');
-        }
-        
-        // Remove the user from the array - use both ID and email to ensure removal
-        console.log('Removing user with ID:', userIdToDelete, 'and email:', userData.email);
-        const newMockUsers = mockUsers.filter(u => {
-          return u.id != userIdToDelete && u.email !== userData.email;
-        });
-        
-        console.log('Users before deletion:', mockUsers.length);
-        console.log('Users after deletion:', newMockUsers.length);
-        
-        if (mockUsers.length === newMockUsers.length) {
-          console.warn('No users were removed from mock data');
-        }
-        
-        // Save updated mock users
-        localStorage.setItem('mockUsers', JSON.stringify(newMockUsers));
-        
-        // Close the confirmation dialog
+        showNotification(`Error al eliminar usuario: ${apiError.message}`, 'error');
         confirmDialog.style.display = 'none';
-        
-        // Show success notification
-        showNotification('Usuario eliminado correctamente (datos locales)', 'success');
-        
-        // Reload users to refresh the table
-        loadUsers();
       }
       
     } catch (error) {
