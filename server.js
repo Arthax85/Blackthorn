@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 
 // Set your SendGrid API key
 // You'll need to set this as an environment variable in your hosting environment
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || 'YOUR_SENDGRID_API_KEY';
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || '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';
 sgMail.setApiKey(SENDGRID_API_KEY);
 
 // Comment out the transporter configuration for now
