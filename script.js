@@ -49,15 +49,31 @@ async function login(event) {
   const password = document.getElementById('login-password').value;
   
   try {
+    // Show loading indicator
+    const loginButton = event.target.querySelector('button');
+    const originalText = loginButton.textContent;
+    loginButton.textContent = 'Iniciando sesión...';
+    loginButton.disabled = true;
+    
+    console.log('Attempting to connect to:', `${API_URL}/login`);
+    
     const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify({ email, password })
     });
     
+    console.log('Response status:', response.status);
     const data = await response.json();
+    console.log('Response data:', data);
+    
+    // Reset button
+    loginButton.textContent = originalText;
+    loginButton.disabled = false;
     
     if (!response.ok) {
       throw new Error(data.error || 'Error al iniciar sesión');
@@ -75,11 +91,23 @@ async function login(event) {
     localStorage.setItem('currentUser', JSON.stringify(data));
     
   } catch (error) {
-    alert(error.message);
+    console.error('Login error:', error);
+    
+    // Check if it's a connection error
+    if (error.message.includes('connection') || error.message === 'Failed to fetch') {
+      alert('No se pudo conectar con el servidor. Por favor, intente de nuevo más tarde.');
+    } else {
+      alert(error.message || 'Error al iniciar sesión');
+    }
+    
+    // Reset button if it wasn't reset
+    const loginButton = event.target.querySelector('button');
+    loginButton.textContent = 'Iniciar Sesión';
+    loginButton.disabled = false;
   }
 }
 
-// Function to handle registration
+// Function to handle registration (similar updates)
 async function register(event) {
   event.preventDefault();
   
@@ -88,15 +116,31 @@ async function register(event) {
   const password = document.getElementById('register-password').value;
   
   try {
+    // Show loading indicator
+    const registerButton = event.target.querySelector('button');
+    const originalText = registerButton.textContent;
+    registerButton.textContent = 'Registrando...';
+    registerButton.disabled = true;
+    
+    console.log('Attempting to connect to:', `${API_URL}/register`);
+    
     const response = await fetch(`${API_URL}/register`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify({ name, email, password })
     });
     
+    console.log('Response status:', response.status);
     const data = await response.json();
+    console.log('Response data:', data);
+    
+    // Reset button
+    registerButton.textContent = originalText;
+    registerButton.disabled = false;
     
     if (!response.ok) {
       throw new Error(data.error || 'Error al registrarse');
@@ -108,7 +152,19 @@ async function register(event) {
     showLoginForm();
     
   } catch (error) {
-    alert(error.message);
+    console.error('Registration error:', error);
+    
+    // Check if it's a connection error
+    if (error.message.includes('connection') || error.message === 'Failed to fetch') {
+      alert('No se pudo conectar con el servidor. Por favor, intente de nuevo más tarde.');
+    } else {
+      alert(error.message || 'Error al registrarse');
+    }
+    
+    // Reset button if it wasn't reset
+    const registerButton = event.target.querySelector('button');
+    registerButton.textContent = 'Registrarse';
+    registerButton.disabled = false;
   }
 }
 
