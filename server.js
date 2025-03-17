@@ -164,11 +164,39 @@ app.get('/api/test', (req, res) => {
 // Add an endpoint to check registered users (for debugging only - remove in production)
 app.get('/api/debug/users', async (req, res) => {
   try {
+    console.log('Attempting to fetch users from database');
     const result = await pool.query('SELECT id, name, email, created_at FROM users');
+    console.log(`Successfully retrieved ${result.rows.length} users`);
     res.json({ count: result.rows.length, users: result.rows });
   } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error fetching users:', error.message);
+    console.error('Error details:', error.stack);
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'production' ? null : error.stack
+    });
+  }
+});
+
+// Add a database test endpoint
+app.get('/api/debug/db-test', async (req, res) => {
+  try {
+    console.log('Testing database connection');
+    const result = await pool.query('SELECT NOW() as time');
+    console.log('Database connection successful');
+    res.json({ 
+      status: 'success', 
+      message: 'Database connection successful',
+      time: result.rows[0].time
+    });
+  } catch (error) {
+    console.error('Database connection test failed:', error.message);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Database connection failed',
+      error: error.message
+    });
   }
 });
 
