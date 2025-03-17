@@ -1,13 +1,45 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const { Client } = require('pg');
+const { Pool } = require('pg');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// PostgreSQL connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:your_password@localhost:5432/blackthorn',
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
+// Test database connection
+pool.query('SELECT NOW()', (err, res) => {
+  if (err) {
+    console.error('Database connection error:', err);
+  } else {
+    console.log('Database connected successfully');
+    
+    // Create users table if it doesn't exist
+    pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        password VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `, (err, res) => {
+      if (err) {
+        console.error('Error creating users table:', err);
+      } else {
+        console.log('Users table ready');
+      }
+    });
+  }
+});
+
+// Middleware - Updated CORS configuration
 app.use(cors({
   origin: true,
   credentials: true,
@@ -17,138 +49,75 @@ app.use(cors({
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '/')));
 
-// Configuración de PostgreSQL
-const client = new Client({
-  user: 'blackthorn_user', // Usuario de la base de datos
-  host: 'dpg-cvbuqbqn91rc73cf5i5g-a', // Host de Render
-  database: 'blackthorn', // Nombre de la base de datos
-  password: '9elOecG64rmN44ckbQfP6EM7ohFMwOEy', // Contraseña generada por Render
-  port: 5432, // Puerto de PostgreSQL
-  ssl: {
-    rejectUnauthorized: false, // Necesario para conexiones seguras en Render
-  },
-});
-
-// Conectar a la base de datos
-client.connect()
-  .then(() => {
-    console.log('Conectado a PostgreSQL');
-    // Crear la tabla 'users' si no existe
-    return client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        password VARCHAR(100) NOT NULL
-      );
-    `);
-  })
-  .then(() => console.log('Tabla "users" verificada/creada'))
-  .catch(err => console.error('Error al conectar o crear la tabla:', err));
-
-// Obtener todos los usuarios
-async function getUsers() {
-  const res = await client.query('SELECT * FROM users');
-  return res.rows;
-}
-
-// Guardar un nuevo usuario
-async function saveUser(user) {
-  const { name, email, password } = user;
-  const query = 'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *';
-  const values = [name, email, password];
-  const res = await client.query(query, values);
-  return res.rows[0];
-}
-
 // API Routes
 app.post('/api/register', async (req, res) => {
   const { name, email, password } = req.body;
-
+  
   console.log('Register request received:', { name, email });
-
+  
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'All fields are required' });
   }
-
+  
   try {
-    // Verificar si el usuario ya existe
-    const users = await getUsers();
-    if (users.some(user => user.email === email)) {
-      return res.status(400).json({ error: 'El usuario ya existe.' });
+    // Check if user already exists
+    const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    
+    if (userCheck.rows.length > 0) {
+      return res.status(400).json({ error: 'User already exists' });
     }
-
-    // Guardar el nuevo usuario
-    const newUser = await saveUser({ name, email, password });
-    console.log('Usuario registrado correctamente:', newUser);
-
-    // Devolver la respuesta sin la contraseña
-    const { password: _, ...userInfo } = newUser;
-    res.status(201).json(userInfo);
+    
+    // Add new user
+    const result = await pool.query(
+      'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email',
+      [name, email, password]
+    );
+    
+    console.log('User registered successfully:', { name, email });
+    res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
-    console.error('Error durante el registro:', error);
+    console.error('Registration error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
-
+  
   console.log('Login attempt for:', email);
-
+  
   if (!email || !password) {
+    console.log('Missing email or password');
     return res.status(400).json({ error: 'Email and password are required' });
   }
-
+  
   try {
-    // Buscar el usuario en la base de datos
-    const query = 'SELECT * FROM users WHERE email = $1 AND password = $2';
-    const values = [email, password];
-    const result = await client.query(query, values);
-
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Usuario y/o contraseña incorrecta.' });
+      console.log('User not found:', email);
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
-
-    // Devolver la información del usuario sin la contraseña
-    const { password: _, ...userInfo } = result.rows[0];
+    
+    const user = result.rows[0];
+    
+    if (user.password !== password) {
+      console.log('Invalid password for:', email);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    console.log('Successful login for:', email);
+    
+    // Return user info (excluding password)
+    const { password: _, ...userInfo } = user;
     res.json(userInfo);
   } catch (error) {
-    console.error('Error during login:', error);
+    console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Endpoint de prueba
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'API is working' });
-});
-
-// Endpoint para depuración (solo para desarrollo)
-app.get('/api/debug/users', async (req, res) => {
-  try {
-    const users = await getUsers();
-    // Devolver usuarios sin contraseñas
-    const safeUsers = users.map(({ password, ...user }) => user);
-    res.json({ count: users.length, users: safeUsers });
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Servir el archivo HTML principal
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Iniciar el servidor
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-// Add a new endpoint to delete a user account
-app.post('/api/delete-account', (req, res) => {
+app.post('/api/delete-account', async (req, res) => {
   try {
     const { email, password } = req.body;
     
@@ -159,17 +128,23 @@ app.post('/api/delete-account', (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
     
-    let users = getUsers();
-    const userIndex = users.findIndex(user => user.email === email && user.password === password);
+    // Verify user credentials
+    const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     
-    if (userIndex === -1) {
-      console.log('Invalid credentials for account deletion:', email);
+    if (userResult.rows.length === 0) {
+      console.log('User not found for deletion:', email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
-    // Remove the user from the array
-    users.splice(userIndex, 1);
-    saveUsers(users);
+    const user = userResult.rows[0];
+    
+    if (user.password !== password) {
+      console.log('Invalid password for account deletion:', email);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // Delete the user
+    await pool.query('DELETE FROM users WHERE email = $1', [email]);
     
     console.log('Account deleted successfully for:', email);
     res.status(200).json({ message: 'Account deleted successfully' });
@@ -177,4 +152,29 @@ app.post('/api/delete-account', (req, res) => {
     console.error('Error deleting account:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// Add a test endpoint to check if the API is working
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API is working' });
+});
+
+// Add an endpoint to check registered users (for debugging only - remove in production)
+app.get('/api/debug/users', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, name, email, created_at FROM users');
+    res.json({ count: result.rows.length, users: result.rows });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Serve the main HTML file for all routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
