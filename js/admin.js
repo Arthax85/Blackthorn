@@ -144,6 +144,12 @@ async function loadUsers() {
         throw new Error(`Error del servidor: ${response.status}`);
       }
       
+      // Check content type to ensure we're getting JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Respuesta no válida: esperaba JSON pero recibió ${contentType || 'unknown'}`);
+      }
+      
       // Parse the response
       const data = await response.json();
       console.log('Users data from API:', data);
@@ -345,6 +351,12 @@ async function handleUserFormSubmit(event) {
         throw new Error(`Error del servidor: ${response.status}`);
       }
       
+      // Check content type to ensure we're getting JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Respuesta no válida: esperaba JSON pero recibió ${contentType || 'unknown'}`);
+      }
+      
       // Parse the response
       const data = await response.json();
       console.log('API response:', data);
@@ -464,6 +476,14 @@ function confirmDeleteUser(userId) {
         // Check if the request was successful
         if (!response.ok) {
           throw new Error(`Error del servidor: ${response.status}`);
+        }
+        
+        // For DELETE requests, we may not always get a response body
+        // Only try to parse JSON if we have a content-type header indicating JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          console.log('API response:', data);
         }
         
         // Close the confirmation dialog
