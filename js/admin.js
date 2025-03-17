@@ -480,9 +480,25 @@ function confirmDeleteUser(userId) {
       
       // Get the user row to access the full user data
       const userRow = document.querySelector(`.delete-btn[data-id="${userId}"]`).closest('tr');
-      const userData = JSON.parse(userRow.getAttribute('data-user'));
       
-      // API URL - use the real API endpoint instead of debug
+      // Check if we have the user data attribute
+      let userData;
+      try {
+        userData = JSON.parse(userRow.getAttribute('data-user'));
+        console.log('User data from row:', userData);
+      } catch (e) {
+        // If we can't get the data from the attribute, extract it from the table cells
+        console.warn('Could not parse user data from attribute, extracting from cells');
+        userData = {
+          id: userId,
+          name: userRow.cells[1].textContent,
+          email: userRow.cells[2].textContent,
+          role: userRow.cells[3].textContent
+        };
+        console.log('User data from cells:', userData);
+      }
+      
+      // API URL
       const API_URL = 'https://blackthorn-auth.onrender.com';
       
       // Try to use the real API
@@ -494,7 +510,6 @@ function confirmDeleteUser(userId) {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'
-            // No Authorization header for debug endpoint
           }
         });
         
@@ -540,13 +555,25 @@ function confirmDeleteUser(userId) {
           mockUsers = [];
         }
         
-        // Find the user by email instead of ID (more reliable)
-        const userEmail = userData.email;
-        const userToDelete = mockUsers.find(u => u.email === userEmail);
+        // Try to find the user by ID first, then by email if ID fails
+        let userToDelete = mockUsers.find(u => u.id == userId);
+        
+        if (!userToDelete && userData.email) {
+          console.log('User not found by ID, trying by email:', userData.email);
+          userToDelete = mockUsers.find(u => u.email === userData.email);
+        }
         
         if (!userToDelete) {
-          console.error('User not found in mock data:', userData);
-          throw new Error('Usuario no encontrado en datos locales');
+          // If we still can't find the user, add it to mock data first
+          console.log('User not found in mock data, adding it first:', userData);
+          userToDelete = {
+            id: parseInt(userId),
+            name: userData.name,
+            email: userData.email,
+            role: userData.role || 'user',
+            createdAt: new Date().toISOString()
+          };
+          mockUsers.push(userToDelete);
         }
         
         if (userToDelete.email === currentUser.email) {
@@ -554,7 +581,7 @@ function confirmDeleteUser(userId) {
         }
         
         // Remove the user from the array
-        const newMockUsers = mockUsers.filter(u => u.email !== userEmail);
+        const newMockUsers = mockUsers.filter(u => u.id != userId);
         
         // Save updated mock users
         localStorage.setItem('mockUsers', JSON.stringify(newMockUsers));
