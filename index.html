@@ -31,7 +31,9 @@
                 </div>
                 <button type="submit">Iniciar Sesión</button>
             </form>
+            <!-- In the login form, add this line after the login button -->
             <p>¿No tienes una cuenta? <a href="#" onclick="showRegisterForm()">Regístrate</a></p>
+            <p>¿Olvidaste tu contraseña? <a href="#" onclick="showPasswordRecoveryForm()">Recuperar contraseña</a></p>
         </div>
         
         <!-- Registration Form -->
@@ -79,6 +81,19 @@
           <button id="confirm-no" class="cancel-btn">Cancelar</button>
         </div>
       </div>
+    </div>
+    <!-- Add this after the register form div -->
+    <!-- Password Recovery Form -->
+    <div id="password-recovery-form" style="display: none;">
+        <h2>Recuperar Contraseña</h2>
+        <form onsubmit="recoverPassword(event)">
+            <div class="form-group">
+                <label for="recovery-email">Email:</label>
+                <input type="email" id="recovery-email" required>
+            </div>
+            <button type="submit">Enviar Enlace de Recuperación</button>
+        </form>
+        <p>¿Recordaste tu contraseña? <a href="#" onclick="showLoginForm()">Iniciar sesión</a></p>
     </div>
 </body>
 </html>

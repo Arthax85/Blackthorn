@@ -211,6 +211,128 @@ function showRegisterForm() {
   document.getElementById('register-form').style.display = 'block';
 }
 
+// Add these functions after the showRegisterForm function
+
+function showPasswordRecoveryForm() {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('register-form').style.display = 'none';
+  document.getElementById('password-recovery-form').style.display = 'block';
+}
+
+// Update the showLoginForm function to also hide the password recovery form
+function showLoginForm() {
+  document.getElementById('login-form').style.display = 'block';
+  document.getElementById('register-form').style.display = 'none';
+  document.getElementById('password-recovery-form').style.display = 'none';
+}
+
+// Function to handle password recovery
+async function recoverPassword(event) {
+  event.preventDefault();
+  
+  // Get email and normalize it exactly as we do during registration
+  const email = document.getElementById('recovery-email').value.trim().toLowerCase();
+  
+  try {
+    // Validate email format
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      throw new Error('Por favor, introduce un correo electrónico válido');
+    }
+    
+    // Show loading indicator
+    const recoveryButton = event.target.querySelector('button');
+    const originalText = recoveryButton.textContent;
+    recoveryButton.textContent = 'Enviando...';
+    recoveryButton.disabled = true;
+    
+    console.log('Attempting password recovery for email:', email);
+    
+    // Try with a different endpoint format
+    const endpoint = `${API_URL}/recover-password`;
+    console.log('Connecting to:', endpoint);
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify({ 
+        email: email,
+        // Add additional debugging info that might help identify the user
+        debug: true
+      })
+    });
+    
+    console.log('Response status:', response.status);
+    console.log('Response headers:', [...response.headers.entries()]);
+    
+    // Reset button
+    recoveryButton.textContent = originalText;
+    recoveryButton.disabled = false;
+    
+    // Handle different response statuses
+    if (!response.ok) {
+      let errorMessage = 'Error al solicitar recuperación de contraseña';
+      
+      try {
+        const errorData = await response.json();
+        console.log('Error response data:', errorData);
+        errorMessage = errorData.error || errorMessage;
+      } catch (e) {
+        console.log('Failed to parse error response as JSON:', e);
+        errorMessage = `Error ${response.status}: ${response.statusText}`;
+      }
+      
+      if (response.status === 404) {
+        // Provide more specific error message with the email for debugging
+        errorMessage = `El correo "${email}" no está registrado en el sistema`;
+        console.log('Email not found in database:', email);
+      } else if (response.status === 429) {
+        errorMessage = 'Demasiados intentos. Por favor, inténtalo más tarde';
+      }
+      
+      throw new Error(errorMessage);
+    }
+    
+    // Success - try to parse response
+    let successMessage = 'Se ha enviado un enlace de recuperación a tu correo electrónico';
+    
+    try {
+      const data = await response.json();
+      console.log('Success response data:', data);
+      if (data.message) {
+        successMessage = data.message;
+      }
+    } catch (e) {
+      console.log('Failed to parse success response as JSON, but request was successful:', e);
+    }
+    
+    // Show success notification
+    showNotification(successMessage, 'success');
+    document.querySelector('#password-recovery-form form').reset();
+    showLoginForm();
+    
+  } catch (error) {
+    console.error('Password recovery error:', error);
+    
+    // Reset button if it wasn't reset
+    const recoveryButton = event.target.querySelector('button');
+    if (recoveryButton.disabled) {
+      recoveryButton.textContent = 'Enviar Enlace de Recuperación';
+      recoveryButton.disabled = false;
+    }
+    
+    // Show error notification
+    if (error.message.includes('connection') || error.message === 'Failed to fetch') {
+      showNotification('No se pudo conectar con el servidor. Por favor, intente de nuevo más tarde.', 'error');
+    } else {
+      showNotification(error.message, 'error');
+    }
+  }
+}
+
 // Check for logged in user after animations
 setTimeout(checkLoggedInUser, 3500);
 

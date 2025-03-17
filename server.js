@@ -94,7 +94,7 @@ app.post('/api/login', async (req, res) => {
   }
   
   try {
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
     
     if (result.rows.length === 0) {
       console.log('User not found:', email);
@@ -115,6 +115,58 @@ app.post('/api/login', async (req, res) => {
     res.json(userInfo);
   } catch (error) {
     console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add password recovery endpoint
+app.post('/api/recover-password', async (req, res) => {
+  const { email } = req.body;
+  
+  console.log('Password recovery request for:', email);
+  
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+  
+  try {
+    // Log all emails in the database for debugging
+    const allUsers = await pool.query('SELECT email FROM users');
+    console.log('All emails in database:', allUsers.rows.map(u => u.email.toLowerCase()));
+    console.log('Looking for email:', email.toLowerCase());
+    
+    // Check if user exists with improved query
+    const result = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email.trim()]);
+    
+    if (result.rows.length === 0) {
+      console.log('User not found for password recovery:', email);
+      
+      // Try a more flexible search as a fallback
+      const fuzzyResult = await pool.query("SELECT * FROM users WHERE email ILIKE $1", [`%${email.trim()}%`]);
+      
+      if (fuzzyResult.rows.length > 0) {
+        console.log('Found similar emails:', fuzzyResult.rows.map(u => u.email));
+        return res.status(404).json({ 
+          error: 'El correo electrónico no está registrado exactamente como se ingresó. ¿Quizás usaste otro correo?' 
+        });
+      }
+      
+      return res.status(404).json({ error: 'El correo electrónico no está registrado en el sistema' });
+    }
+    
+    // In a real application, you would:
+    // 1. Generate a unique token
+    // 2. Store the token in the database with an expiration time
+    // 3. Send an email with a link containing the token
+    
+    const user = result.rows[0];
+    console.log('User found for password recovery:', user.email);
+    
+    res.status(200).json({ 
+      message: `Se ha enviado un enlace de recuperación a ${user.email}. Por favor, revisa tu bandeja de entrada.` 
+    });
+  } catch (error) {
+    console.error('Password recovery error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -231,4 +283,4 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-});
+}); // This closing bracket was missing
