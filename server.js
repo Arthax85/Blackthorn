@@ -165,7 +165,8 @@ app.get('/api/test', (req, res) => {
 app.get('/api/debug/users', async (req, res) => {
   try {
     console.log('Attempting to fetch users from database');
-    const result = await pool.query('SELECT id, name, email, created_at FROM users');
+    // Modified query to only select columns we know exist
+    const result = await pool.query('SELECT id, name, email FROM users');
     console.log(`Successfully retrieved ${result.rows.length} users`);
     res.json({ count: result.rows.length, users: result.rows });
   } catch (error) {
@@ -196,6 +197,29 @@ app.get('/api/debug/db-test', async (req, res) => {
       status: 'error', 
       message: 'Database connection failed',
       error: error.message
+    });
+  }
+});
+
+// Add an endpoint to check table schema
+app.get('/api/debug/schema', async (req, res) => {
+  try {
+    console.log('Checking users table schema');
+    const result = await pool.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'users'
+    `);
+    console.log(`Table has ${result.rows.length} columns`);
+    res.json({ 
+      count: result.rows.length, 
+      columns: result.rows 
+    });
+  } catch (error) {
+    console.error('Error checking schema:', error.message);
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      message: error.message
     });
   }
 });
