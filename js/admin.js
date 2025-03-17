@@ -127,20 +127,20 @@ async function loadUsers() {
     try {
       console.log('Attempting to fetch users from real database');
       
-      // API URL - using the debug endpoint that works
+      // API URL - using the real API endpoint with authentication
       const API_URL = 'https://blackthorn-auth.onrender.com';
       
       // Log the request details for debugging
-      console.log('Making request to:', `${API_URL}/api/debug/users`);
+      console.log('Making request to:', `${API_URL}/api/users`);
       console.log('With token:', currentUser.token ? `${currentUser.token.substring(0, 10)}...` : 'No token');
       
-      // Make the API request
-      const response = await fetch(`${API_URL}/api/debug/users`, {
+      // Make the API request to the real endpoint with authentication
+      const response = await fetch(`${API_URL}/api/users`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
-          // No Authorization header for debug endpoint
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
         }
       });
       
@@ -342,25 +342,25 @@ async function handleUserFormSubmit(event) {
     
     let response;
     
-    // Try to use the real API
+    // Try to use the real API with authentication
     try {
       if (mode === 'add') {
         // Create new user
-        response = await fetch(`${API_URL}/api/debug/users`, {
+        response = await fetch(`${API_URL}/api/users`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
-            // No Authorization header for debug endpoint
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentUser.token}`
           },
           body: JSON.stringify(userData)
         });
       } else {
         // Update existing user
-        response = await fetch(`${API_URL}/api/debug/users/${userId}`, {
+        response = await fetch(`${API_URL}/api/users/${userId}`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json'
-            // No Authorization header for debug endpoint
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentUser.token}`
           },
           body: JSON.stringify(userData)
         });
@@ -368,6 +368,8 @@ async function handleUserFormSubmit(event) {
       
       // Check if the request was successful
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
         throw new Error(`Error del servidor: ${response.status}`);
       }
       
@@ -396,64 +398,7 @@ async function handleUserFormSubmit(event) {
       
     } catch (apiError) {
       console.error('API error:', apiError);
-      
-      // Fall back to mock data if API fails
-      console.warn('Falling back to mock data due to API error');
-      
-      // Since we're using mock data, update the mock users in localStorage
-      let mockUsers = [];
-      try {
-        const storedMockUsers = localStorage.getItem('mockUsers');
-        if (storedMockUsers) {
-          mockUsers = JSON.parse(storedMockUsers);
-        }
-      } catch (e) {
-        console.warn('Could not load stored mock users:', e);
-        mockUsers = [];
-      }
-      
-      if (mode === 'add') {
-        // Create new user with a new ID
-        const newId = mockUsers.length > 0 ? Math.max(...mockUsers.map(u => u.id)) + 1 : 1;
-        const newUser = {
-          id: newId,
-          name: userData.name,
-          email: userData.email,
-          role: userData.role,
-          createdAt: new Date().toISOString()
-        };
-        mockUsers.push(newUser);
-        console.log('Added new mock user:', newUser);
-      } else {
-        // Update existing user
-        const userIndex = mockUsers.findIndex(u => u.id == userId);
-        if (userIndex === -1) {
-          throw new Error('Usuario no encontrado');
-        }
-        mockUsers[userIndex] = {
-          ...mockUsers[userIndex],
-          name: userData.name,
-          email: userData.email,
-          role: userData.role
-        };
-        console.log('Updated mock user:', mockUsers[userIndex]);
-      }
-      
-      // Save updated mock users
-      localStorage.setItem('mockUsers', JSON.stringify(mockUsers));
-      
-      // Close modal
-      document.getElementById('user-modal').style.display = 'none';
-      
-      // Reload users to get fresh data
-      loadUsers();
-      
-      // Show success notification
-      if (mode === 'add') {
-        showNotification('Usuario agregado correctamente (datos locales)', 'success');
-      } else {
-        showNotification('Usuario actualizado correctamente (datos locales)', 'success');
-      }
+      showNotification(`Error: ${apiError.message}`, 'error');
     }
     
   } catch (error) {
@@ -501,15 +446,16 @@ function confirmDeleteUser(userId) {
       // API URL
       const API_URL = 'https://blackthorn-auth.onrender.com';
       
-      // Try to use the real API
+      // Try to use the real API with authentication
       try {
         console.log(`Attempting to delete user with ID: ${userId}`);
         
-        // Delete user - use the debug endpoint
-        const response = await fetch(`${API_URL}/api/debug/users/${userId}`, {
+        // Delete user - use the real API endpoint with authentication
+        const response = await fetch(`${API_URL}/api/users/${userId}`, {
           method: 'DELETE',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentUser.token}`
           }
         });
         
