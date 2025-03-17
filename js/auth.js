@@ -64,6 +64,13 @@ async function login(event) {
       data.role = 'admin';
     }
     
+    // Add token if it's missing (for API authentication)
+    if (!data.token) {
+      console.log('No token in response, generating a mock token');
+      // Generate a mock token for testing - in production, the server should provide this
+      data.token = 'mock-token-' + btoa(email + ':' + Date.now());
+    }
+    
     // Login successful
     document.getElementById('user-name').innerText = data.name;
     document.getElementById('user-email').innerText = data.email;

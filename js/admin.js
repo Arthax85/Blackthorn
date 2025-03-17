@@ -45,9 +45,6 @@ async function loadUsers() {
     const usersTable = document.getElementById('users-table-body');
     usersTable.innerHTML = '<tr><td colspan="6" class="loading-cell">Cargando usuarios...</td></tr>';
     
-    // Get the API URL from the global variable or define it here
-    const API_URL = window.API_URL || 'https://blackthorn-auth.onrender.com/api';
-    
     // Get current user from localStorage - with better error handling
     let currentUser;
     try {
@@ -69,17 +66,34 @@ async function loadUsers() {
       throw new Error('No hay una sesión activa válida. Por favor, inicia sesión nuevamente.');
     }
     
-    // For testing - use mock data if we're logged in but don't have a token
-    // In a real app, you would redirect to login instead
+    // Check if we have a token
     if (!currentUser.token) {
-      console.warn('No token found, using mock data');
+      console.warn('No token found in user data');
+      // Add a mock token for testing
+      currentUser.token = 'mock-token-' + btoa(currentUser.email + ':' + Date.now());
+      // Update localStorage with the token
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      console.log('Added mock token to user data');
+    }
+    
+    // Check if token is a mock token (starts with 'mock-token-')
+    const isMockToken = currentUser.token.startsWith('mock-token-');
+    
+    // If using a mock token, just show mock data
+    if (isMockToken) {
+      console.warn('Using mock token, showing mock data');
       const mockUsers = [
         { id: 1, name: 'Usuario de Prueba (DATOS LOCALES)', email: 'test@example.com', role: 'user', createdAt: new Date() },
-        { id: 2, name: 'Admin (DATOS LOCALES)', email: 'zerocult_new@hotmail.com', role: 'admin', createdAt: new Date() }
+        { id: 2, name: 'Admin (DATOS LOCALES)', email: 'zerocult_new@hotmail.com', role: 'admin', createdAt: new Date() },
+        { id: 3, name: 'Usuario Real (SIMULADO)', email: 'usuario@example.com', role: 'user', createdAt: new Date(Date.now() - 86400000) }
       ];
       displayUsers(mockUsers);
       return;
     }
+    
+    // Continue with real API call if we have a real token
+    // Get the API URL from the global variable or define it here
+    const API_URL = window.API_URL || 'https://blackthorn-auth.onrender.com/api';
     
     // Try different endpoints to get users
     let response;
