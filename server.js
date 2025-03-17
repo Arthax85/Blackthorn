@@ -1,145 +1,148 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const fs = require('fs');
+const { Client } = require('pg');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware - Updated CORS configuration
+// Middleware
 app.use(cors({
-  origin: true, // Allow requests from any origin
-  credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+  origin: true,
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '/')));
 
-// File to store users (in a real app, use a database)
-const USERS_FILE = path.join(__dirname, 'users.json');
+// Configuración de PostgreSQL
+const client = new Client({
+  user: 'blackthorn_user', // Usuario de la base de datos
+  host: 'dpg-cvbuqbqn91rc73cf5i5g-a', // Host de Render
+  database: 'blackthorn', // Nombre de la base de datos
+  password: '9elOecG64rmN44ckbQfP6EM7ohFMwOEy', // Contraseña generada por Render
+  port: 5432, // Puerto de PostgreSQL
+  ssl: {
+    rejectUnauthorized: false, // Necesario para conexiones seguras en Render
+  },
+});
 
-// Initialize users file if it doesn't exist
-if (!fs.existsSync(USERS_FILE)) {
-  // Create with a default admin user for testing
-  fs.writeFileSync(USERS_FILE, JSON.stringify([
-    {
-      name: "Admin User",
-      email: "admin@example.com",
-      password: "password123"
-    }
-  ]));
-  console.log('Created users.json with default admin user');
-} else {
-  console.log('Users file exists');
+// Conectar a la base de datos
+client.connect()
+  .then(() => {
+    console.log('Conectado a PostgreSQL');
+    // Crear la tabla 'users' si no existe
+    return client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        password VARCHAR(100) NOT NULL
+      );
+    `);
+  })
+  .then(() => console.log('Tabla "users" verificada/creada'))
+  .catch(err => console.error('Error al conectar o crear la tabla:', err));
+
+// Obtener todos los usuarios
+async function getUsers() {
+  const res = await client.query('SELECT * FROM users');
+  return res.rows;
 }
 
-// Get users from file
-function getUsers() {
-  try {
-    if (fs.existsSync(USERS_FILE)) {
-      const data = fs.readFileSync(USERS_FILE);
-      const users = JSON.parse(data);
-      console.log(`Retrieved ${users.length} users from file`);
-      return users;
-    } else {
-      console.log('Users file not found, creating new one');
-      const defaultUsers = [
-        {
-          name: "Admin User",
-          email: "admin@example.com",
-          password: "password123"
-        }
-      ];
-      fs.writeFileSync(USERS_FILE, JSON.stringify(defaultUsers));
-      return defaultUsers;
-    }
-  } catch (error) {
-    console.error('Error reading users file:', error);
-    return [];
-  }
-}
-
-// Save users to file
-function saveUsers(users) {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users));
+// Guardar un nuevo usuario
+async function saveUser(user) {
+  const { name, email, password } = user;
+  const query = 'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *';
+  const values = [name, email, password];
+  const res = await client.query(query, values);
+  return res.rows[0];
 }
 
 // API Routes
-app.post('/api/register', (req, res) => {
+app.post('/api/register', async (req, res) => {
   const { name, email, password } = req.body;
-  
+
   console.log('Register request received:', { name, email });
-  
+
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'All fields are required' });
   }
-  
-  const users = getUsers();
-  
-  // Check if user already exists
-  if (users.some(user => user.email === email)) {
-    return res.status(400).json({ error: 'User already exists' });
+
+  try {
+    // Verificar si el usuario ya existe
+    const users = await getUsers();
+    if (users.some(user => user.email === email)) {
+      return res.status(400).json({ error: 'El usuario ya existe.' });
+    }
+
+    // Guardar el nuevo usuario
+    const newUser = await saveUser({ name, email, password });
+    console.log('Usuario registrado correctamente:', newUser);
+
+    // Devolver la respuesta sin la contraseña
+    const { password: _, ...userInfo } = newUser;
+    res.status(201).json(userInfo);
+  } catch (error) {
+    console.error('Error durante el registro:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  
-  // Add new user
-  users.push({ name, email, password });
-  saveUsers(users);
-  
-  console.log('User registered successfully:', { name, email });
-  res.status(201).json({ message: 'User registered successfully' });
 });
 
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
-  
+
   console.log('Login attempt for:', email);
-  
+
   if (!email || !password) {
-    console.log('Missing email or password');
     return res.status(400).json({ error: 'Email and password are required' });
   }
-  
-  const users = getUsers();
-  console.log('Total users in database:', users.length);
-  
-  // For debugging - log emails of registered users (don't log passwords in production)
-  console.log('Registered emails:', users.map(u => u.email));
-  
-  // Find user
-  const user = users.find(user => user.email === email && user.password === password);
-  
-  if (!user) {
-    console.log('Invalid credentials for:', email);
-    return res.status(401).json({ error: 'Invalid credentials' });
+
+  try {
+    // Buscar el usuario en la base de datos
+    const query = 'SELECT * FROM users WHERE email = $1 AND password = $2';
+    const values = [email, password];
+    const result = await client.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Usuario y/o contraseña incorrecta.' });
+    }
+
+    // Devolver la información del usuario sin la contraseña
+    const { password: _, ...userInfo } = result.rows[0];
+    res.json(userInfo);
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  
-  console.log('Successful login for:', email);
-  
-  // Return user info (excluding password)
-  const { password: _, ...userInfo } = user;
-  res.json(userInfo);
 });
 
-// Add a test endpoint to check if the API is working
+// Endpoint de prueba
 app.get('/api/test', (req, res) => {
   res.json({ message: 'API is working' });
 });
 
-// Add an endpoint to check registered users (for debugging only - remove in production)
-app.get('/api/debug/users', (req, res) => {
-  const users = getUsers();
-  // Return users without passwords
-  const safeUsers = users.map(({ password, ...user }) => user);
-  res.json({ count: users.length, users: safeUsers });
+// Endpoint para depuración (solo para desarrollo)
+app.get('/api/debug/users', async (req, res) => {
+  try {
+    const users = await getUsers();
+    // Devolver usuarios sin contraseñas
+    const safeUsers = users.map(({ password, ...user }) => user);
+    res.json({ count: users.length, users: safeUsers });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
-// Serve the main HTML file for all routes
+// Servir el archivo HTML principal
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
