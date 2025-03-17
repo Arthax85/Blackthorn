@@ -50,10 +50,12 @@ async function loadUsers() {
       throw new Error('No hay una sesión activa');
     }
     
-    // API URL from auth.js
+    // API URL from auth.js - make sure this matches your backend URL
     const API_URL = 'https://blackthorn-auth.onrender.com/api';
+    console.log('Fetching users from:', `${API_URL}/users`);
     
-    const response = await fetch(`${API_URL}/admin/users`, {
+    // Try a simpler endpoint first - just get all users
+    const response = await fetch(`${API_URL}/users`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -61,33 +63,49 @@ async function loadUsers() {
       }
     });
     
+    console.log('Response status:', response.status);
+    
     if (!response.ok) {
       if (response.status === 403) {
         throw new Error('No tienes permisos para acceder a esta información');
       }
-      throw new Error('Error al obtener la lista de usuarios');
+      throw new Error(`Error al obtener la lista de usuarios: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log('Users data:', data);
+    console.log('Users data received:', data);
     
-    if (!data.users || data.users.length === 0) {
+    // Check the structure of the response
+    let users = [];
+    if (Array.isArray(data)) {
+      users = data;
+    } else if (data.users && Array.isArray(data.users)) {
+      users = data.users;
+    } else if (data.data && Array.isArray(data.data)) {
+      users = data.data;
+    } else {
+      console.error('Unexpected data structure:', data);
+      throw new Error('Formato de datos inesperado');
+    }
+    
+    if (users.length === 0) {
       usersTable.innerHTML = '<tr><td colspan="6" class="empty-cell">No hay usuarios registrados</td></tr>';
       return;
     }
     
-    displayUsers(data.users);
+    // Display the real users
+    displayUsers(users);
     
   } catch (error) {
     console.error('Load users error:', error);
     const usersTable = document.getElementById('users-table-body');
     usersTable.innerHTML = `<tr><td colspan="6" class="error-cell">Error: ${error.message}</td></tr>`;
     
-    // If API fails, show mock data as fallback
-    console.log('Showing mock data as fallback');
+    // If API fails, show mock data as fallback but with clear indication
+    showNotification('Usando datos de prueba debido a un error de conexión', 'warning');
     const mockUsers = [
-      { id: 1, name: 'Usuario de Prueba', email: 'test@example.com', role: 'user', createdAt: new Date() },
-      { id: 2, name: 'Admin', email: 'zerocult_new@hotmail.com', role: 'admin', createdAt: new Date() }
+      { id: 1, name: 'Usuario de Prueba (DATOS LOCALES)', email: 'test@example.com', role: 'user', createdAt: new Date() },
+      { id: 2, name: 'Admin (DATOS LOCALES)', email: 'zerocult_new@hotmail.com', role: 'admin', createdAt: new Date() }
     ];
     displayUsers(mockUsers);
   }
