@@ -5,7 +5,10 @@ const supabase = supabase.createClient(
 
 // Eliminar la inicialización al inicio del archivo y usar directamente las funciones
 
-async function login(event) {
+// Eliminar esta inicialización duplicada
+// const supabase = supabase.createClient(...);
+
+window.login = async function(event) {
   event.preventDefault();
   const email = document.getElementById('login-email').value;
   const password = document.getElementById('login-password').value;
@@ -29,9 +32,9 @@ async function login(event) {
   } catch (error) {
     handleLoginError(error);
   }
-}
+};
 
-async function register(event) {
+window.register = async function(event) {
   event.preventDefault();
   const name = document.getElementById('register-name').value;
   const email = document.getElementById('register-email').value;
@@ -53,26 +56,20 @@ async function register(event) {
   }
 }
 
-function signOut() {
+window.signOut = function() {
   window.supabase.auth.signOut().then(() => {
-    // Limpiar datos locales
     localStorage.removeItem('currentUser');
     
-    // Ocultar todos los formularios primero
     document.getElementById('user-info').style.display = 'none';
     document.getElementById('register-form').style.display = 'none';
     document.getElementById('password-recovery-form').style.display = 'none';
-    
-    // Mostrar el formulario de login
     document.getElementById('login-form').style.display = 'block';
     
-    // Limpiar los campos de usuario
     document.getElementById('user-name').innerText = '';
     document.getElementById('user-email').innerText = '';
     
     showNotification('Sesión cerrada correctamente', 'success');
     
-    // Recargar la página después de un breve retraso
     setTimeout(() => {
       window.location.reload();
     }, 2000);
@@ -80,11 +77,10 @@ function signOut() {
     console.error('Error signing out:', error);
     showNotification('Error al cerrar sesión', 'error');
   });
-}
-  showLoginForm();
-}
+}; // Corregir el cierre de la función
 
-function handleSuccessfulLogin(userData) {
+// Hacer globales las funciones de manejo
+window.handleSuccessfulLogin = function(userData) {
   document.getElementById('user-name').innerText = userData.name;
   document.getElementById('user-email').innerText = userData.email;
   document.getElementById('user-info').style.display = 'block';
@@ -93,23 +89,23 @@ function handleSuccessfulLogin(userData) {
   showNotification('Inicio de sesión exitoso', 'success');
 }
 
-function handleLoginError(error) {
+window.handleLoginError = function(error) {
   console.error('Login error:', error);
   showNotification(error.message || 'Error al iniciar sesión', 'error');
 }
 
-function handleSuccessfulRegistration() {
+window.handleSuccessfulRegistration = function() {
   showNotification('Registro exitoso. Por favor, inicia sesión.', 'success');
   showLoginForm();
 }
 
-function handleRegistrationError(error) {
+window.handleRegistrationError = function(error) {
   console.error('Registration error:', error);
   showNotification(error.message || 'Error al registrarse', 'error');
 }
 
 
-function checkLoggedInUser() {
+window.checkLoggedInUser = function() {
     const currentUser = localStorage.getItem('currentUser');
     
     if (currentUser) {
