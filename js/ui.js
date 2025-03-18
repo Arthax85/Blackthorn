@@ -27,14 +27,11 @@ function confirmDeleteAccount() {
   const confirmBtn = document.getElementById('confirm-yes');
   const cancelBtn = document.getElementById('confirm-no');
   
-  // Show the dialog
   dialog.style.display = 'flex';
   
-  // Set up event listeners
   const handleConfirm = () => {
     dialog.style.display = 'none';
-    deleteAccount();
-    // Clean up event listeners
+    window.deleteAccount(); // Use the global function
     confirmBtn.removeEventListener('click', handleConfirm);
     cancelBtn.removeEventListener('click', handleCancel);
   };
@@ -50,6 +47,9 @@ function confirmDeleteAccount() {
   confirmBtn.addEventListener('click', handleConfirm);
   cancelBtn.addEventListener('click', handleCancel);
 }
+
+// Make it globally available
+window.confirmDeleteAccount = confirmDeleteAccount;
 
 // Function to handle theme toggle
 function toggleTheme() {

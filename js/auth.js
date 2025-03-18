@@ -99,3 +99,25 @@ function checkLoggedInUser() {
 
 // Export for use in animation.js
 window.checkLoggedInUser = checkLoggedInUser;
+
+
+async function deleteAccount() {
+  try {
+    const { error } = await window.supabase.auth.admin.deleteUser(
+      (await window.supabase.auth.getUser()).data.user.id
+    );
+
+    if (error) throw error;
+
+    // Clear local storage and show success message
+    localStorage.removeItem('currentUser');
+    showNotification('Cuenta eliminada correctamente', 'success');
+    showLoginForm();
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    showNotification('Error al eliminar la cuenta: ' + error.message, 'error');
+  }
+}
+
+// Make it globally available
+window.deleteAccount = deleteAccount;
