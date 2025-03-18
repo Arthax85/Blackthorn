@@ -90,12 +90,13 @@ async function loadUsers() {
         const SUPABASE_URL = 'https://efemxvfuepbbqnmqzazt.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c';
 
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/users`, {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/auth.users?select=*`, {
             method: 'GET',
             headers: {
                 'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, // Changed this line
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+                'Range': '0-999'
             }
         });
 
