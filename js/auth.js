@@ -54,8 +54,33 @@ async function register(event) {
 }
 
 function signOut() {
-  window.supabase.auth.signOut();
-  localStorage.removeItem('currentUser');
+  window.supabase.auth.signOut().then(() => {
+    // Limpiar datos locales
+    localStorage.removeItem('currentUser');
+    
+    // Ocultar todos los formularios primero
+    document.getElementById('user-info').style.display = 'none';
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('password-recovery-form').style.display = 'none';
+    
+    // Mostrar el formulario de login
+    document.getElementById('login-form').style.display = 'block';
+    
+    // Limpiar los campos de usuario
+    document.getElementById('user-name').innerText = '';
+    document.getElementById('user-email').innerText = '';
+    
+    showNotification('Sesión cerrada correctamente', 'success');
+    
+    // Recargar la página después de un breve retraso
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+  }).catch(error => {
+    console.error('Error signing out:', error);
+    showNotification('Error al cerrar sesión', 'error');
+  });
+}
   showLoginForm();
 }
 
