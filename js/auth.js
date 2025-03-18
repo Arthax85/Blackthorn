@@ -3,7 +3,22 @@ const supabase = supabase.createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c'
 );
 
-async function login(event) {
+window.handleLoginError = function(error) {
+    console.error('Login error:', error);
+    showNotification(error.message || 'Error al iniciar sesión', 'error');
+    return false;
+};
+
+window.handleSuccessfulLogin = function(userData) {
+    document.getElementById('user-name').innerText = userData.name;
+    document.getElementById('user-email').innerText = userData.email;
+    document.getElementById('user-info').style.display = 'block';
+    document.getElementById('login-form').style.display = 'none';
+    localStorage.setItem('currentUser', JSON.stringify(userData));
+    showNotification('Inicio de sesión exitoso', 'success');
+};
+
+window.login = async function(event) {
     event.preventDefault();
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
@@ -23,15 +38,13 @@ async function login(event) {
             role: data.user.role || 'user'
         };
 
-        handleSuccessfulLogin(userData);
-        return false; // Prevent form submission
+        window.handleSuccessfulLogin(userData);
+        return false;
     } catch (error) {
-        handleLoginError(error);
-        return false; // Prevent form submission
+        window.handleLoginError(error);
+        return false;
     }
-}
-
-window.login = login;
+};
 
 window.register = async function(event) {
   event.preventDefault();
