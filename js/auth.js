@@ -39,7 +39,11 @@ async function login(event) {
                 'apikey': SUPABASE_ANON_KEY,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({
+                email: email,
+                password: password,
+                gotrue_meta_security: {}
+            })
         });
         
         console.log('Response status:', response.status);
@@ -51,64 +55,58 @@ async function login(event) {
         loginButton.disabled = false;
 
         if (!response.ok) {
-          // Check if it's an authentication error (401)
-          if (response.status === 401) {
-            throw new Error('Usuario y/o contraseña incorrecta');
-          } else {
-            throw new Error(data.error || 'Error al iniciar sesión');
-          }
+            if (response.status === 400 && data.error_description) {
+                throw new Error(data.error_description);
+            } else if (response.status === 401) {
+                throw new Error('Usuario y/o contraseña incorrecta');
+            } else {
+                throw new Error(data.error || 'Error al iniciar sesión');
+            }
         }
-        
-        // Add admin role if email matches admin email
-        const adminEmails = ['zerocult_new@hotmail.com']; // Your admin email
+
+        // Format user data from Supabase response
+        const userData = {
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.user_metadata?.name || email.split('@')[0],
+            role: data.user.role || 'user',
+            token: data.access_token
+        };
+
+        // Add admin role if email matches
+        const adminEmails = ['zerocult_new@hotmail.com'];
         if (adminEmails.includes(email.toLowerCase())) {
-          data.role = 'admin';
+            userData.role = 'admin';
         }
-        
-        // Add token if it's missing (for API authentication)
-        if (!data.token) {
-          console.log('No token in response, generating a mock token');
-          // Generate a mock token for testing - in production, the server should provide this
-          data.token = 'mock-token-' + btoa(email + ':' + Date.now());
-        }
-        
-        // Login successful
-        document.getElementById('user-name').innerText = data.name;
-        document.getElementById('user-email').innerText = data.email;
+
+        // Update UI
+        document.getElementById('user-name').innerText = userData.name;
+        document.getElementById('user-email').innerText = userData.email;
         document.getElementById('user-info').style.display = 'block';
         document.getElementById('login-form').style.display = 'none';
         document.getElementById('register-form').style.display = 'none';
         
-        // Check if user is admin by email
-        if (adminEmails.includes(email.toLowerCase())) {
-          document.getElementById('admin-panel-link').style.display = 'block';
-        } else {
-          document.getElementById('admin-panel-link').style.display = 'none';
-        }
+        // Show/hide admin panel link
+        document.getElementById('admin-panel-link').style.display = 
+            userData.role === 'admin' ? 'block' : 'none';
         
-        // Reset the form
+        // Reset form and save user data
         document.querySelector('#login-form form').reset();
+        localStorage.setItem('currentUser', JSON.stringify(userData));
         
-        // Save login state
-        localStorage.setItem('currentUser', JSON.stringify(data));
-        
-        // Show success notification
         showNotification('Inicio de sesión exitoso', 'success');
         
-      } catch (error) {
+    } catch (error) {
         console.error('Login error:', error);
-        
-        // Show error notification
         showNotification(error.message || 'Error al iniciar sesión', 'error');
         
-        // Reset button if it wasn't reset
         const loginButton = event.target.querySelector('button');
         if (loginButton) {
-          loginButton.textContent = 'Iniciar Sesión';
-          loginButton.disabled = false;
+            loginButton.textContent = 'Iniciar Sesión';
+            loginButton.disabled = false;
         }
-      }
     }
+}
 
 // Function to handle registration
 async function register(event) {
