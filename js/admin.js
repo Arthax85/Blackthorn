@@ -83,11 +83,10 @@ async function loadUsers() {
         console.log('Current user data:', currentUser);
 
         if (!currentUser || !currentUser.token) {
-            window.location.href = 'login.html';
+            window.location.href = 'index.html?error=session_expired';
             throw new Error('Sesión no válida');
         }
 
-        // Change to Supabase URL
         const SUPABASE_URL = 'https://efemxvfuepbbqnmqzazt.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c';
 
@@ -95,7 +94,7 @@ async function loadUsers() {
             method: 'GET',
             headers: {
                 'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${currentUser.token}`,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, // Changed this line
                 'Content-Type': 'application/json'
             }
         });

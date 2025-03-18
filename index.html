@@ -67,7 +67,7 @@
             <p>Email: <span id="user-email"></span></p>
             <!-- Admin panel link - hidden by default -->
             <p id="admin-panel-link" style="display: none;">
-                <a href="admin.html" class="admin-link">Acceder al Panel de Administración</a>
+                <a href="admin.html" class="admin-link" onclick="return checkAdminAccess(event)">Acceder al Panel de Administración</a>
             </p>
             <div class="button-group">
                 <button onclick="signOut()" class="sign-out-btn">Cerrar sesión</button>
