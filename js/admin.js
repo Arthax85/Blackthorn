@@ -80,6 +80,8 @@ async function loadUsers() {
         usersTable.innerHTML = '<tr><td colspan="6" class="loading-cell">Cargando usuarios...</td></tr>';
         
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        console.log('Current user data:', currentUser); // Debug user data
+
         if (!currentUser || !currentUser.token) {
             window.location.href = 'login.html';
             throw new Error('Sesión no válida');
@@ -92,15 +94,20 @@ async function loadUsers() {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'Authorization': `Bearer ${currentUser.token}`,
-                'X-Admin-Secret': currentUser.token
+                'X-Admin-Role': 'admin',
+                'X-Admin-Email': currentUser.email
             },
             credentials: 'include'
         });
 
+        // Log response for debugging
+        console.log('Response status:', response.status);
+        console.log('Response headers:', [...response.headers.entries()]);
+
         if (!response.ok) {
             if (response.status === 401) {
                 localStorage.removeItem('currentUser');
-                window.location.href = 'login.html';
+                window.location.href = 'login.html?error=session_expired';
                 throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
             }
             throw new Error(`Error del servidor: ${response.status}`);
