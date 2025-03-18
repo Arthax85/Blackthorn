@@ -59,10 +59,11 @@ if (typeof showNotification !== 'function') {
 }
 
 // Function to check if user is admin (if not defined in auth.js)
+// Function to check if user is admin
 function isAdmin() {
   const currentUser = JSON.parse(localStorage.getItem('currentUser'));
   // Check both role and email for admin status
-  const adminEmails = ['zerocult_new@hotmail.com']; // Your admin email
+  const adminEmails = ['zerocult_new@hotmail.com']; // Tu email de administrador
   return currentUser && (
     currentUser.role === 'admin' || 
     (currentUser.email && adminEmails.includes(currentUser.email.toLowerCase()))
@@ -72,6 +73,14 @@ function isAdmin() {
 // Initialize admin panel
 function initAdminPanel() {
   console.log('Initializing admin panel');
+  
+  // Add authentication headers to all requests
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Authorization': `Bearer ${localStorage.getItem('currentUser') ? JSON.parse(localStorage.getItem('currentUser')).token : ''}`
+  };
+  
   console.log('Admin check:', isAdmin());
   
   // Check if user is admin

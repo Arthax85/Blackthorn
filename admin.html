@@ -8,6 +8,12 @@
 </head>
 <body class="dark-theme">
     <div class="container auth-container">
+        <div class="container auth-container">
+            <div id="admin-login" style="display: none;">
+                <h2>Login Administrativo</h2>
+                <input type="password" id="admin-secret" placeholder="Admin Secret">
+                <button onclick="loginAdmin()" class="btn-edit">Acceder</button>
+            </div>
         <h1 class="title">Panel de Administración</h1>
         <div class="stats-panel">
             <div class="stat-item">
@@ -115,16 +121,19 @@
                     const response = await fetch(`https://blackthorn-auth.onrender.com/api/users/${userId}`, {
                         method: 'DELETE',
                         headers: {
-                            'Accept': 'application/json'
+                            'Accept': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                            'X-Admin-Secret': localStorage.getItem('adminSecret')
                         }
                     });
 
-                    if (response.ok) {
-                        alert('Usuario eliminado correctamente');
-                        loadUsers(); // Recargar la lista
-                    } else {
-                        throw new Error('Error al eliminar el usuario');
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Error al eliminar el usuario');
                     }
+
+                    alert('Usuario eliminado correctamente');
+                    loadUsers();
                 } catch (error) {
                     alert('Error: ' + error.message);
                 }
@@ -185,3 +194,40 @@
     </script>
 </body>
 </html>
+
+<script>
+    // Añadir esta función
+    async function loginAdmin() {
+        const secret = document.getElementById('admin-secret').value;
+        try {
+            const response = await fetch('https://blackthorn-auth.onrender.com/api/admin/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ secret })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('adminToken', data.token);
+                localStorage.setItem('adminSecret', secret);
+                document.getElementById('admin-login').style.display = 'none';
+                loadUsers();
+            } else {
+                throw new Error('Credenciales inválidas');
+            }
+        } catch (error) {
+            alert('Error de autenticación: ' + error.message);
+        }
+    }
+
+    // Modificar el DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!localStorage.getItem('adminToken')) {
+            document.getElementById('admin-login').style.display = 'block';
+        } else {
+            loadUsers();
+        }
+    });
+</script>
