@@ -79,17 +79,14 @@ async function loadUsers() {
         const usersTable = document.getElementById('users-table-body');
         usersTable.innerHTML = '<tr><td colspan="6" class="loading-cell">Cargando usuarios...</td></tr>';
         
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        console.log('Current user data:', currentUser);
-
         const SUPABASE_URL = 'https://efemxvfuepbbqnmqzazt.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c';
+        const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjI4MTgyMSwiZXhwIjoyMDU3ODU3ODIxfQ.aMgGzYvZYgzVGPHGDZPBXVNnQkr8eYRJhqXxFLaVh4Y';
 
         const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*`, {
             method: 'GET',
             headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'apikey': SERVICE_ROLE_KEY,
+                'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -197,20 +194,25 @@ async function handleUserFormSubmit(event) {
     
     try {
         const SUPABASE_URL = 'https://efemxvfuepbbqnmqzazt.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c';
+        const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjI4MTgyMSwiZXhwIjoyMDU3ODU3ODIxfQ.aMgGzYvZYgzVGPHGDZPBXVNnQkr8eYRJhqXxFLaVh4Y';
         
         let response;
         if (mode === 'add') {
-            // First create auth user
-            const authResponse = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+            // Create auth user
+            const authResponse = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
                 method: 'POST',
                 headers: {
-                    'apikey': SUPABASE_ANON_KEY,
+                    'apikey': SERVICE_ROLE_KEY,
+                    'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     email: userData.email,
-                    password: document.getElementById('user-password').value
+                    password: document.getElementById('user-password').value,
+                    user_metadata: {
+                        name: userData.name,
+                        role: userData.role
+                    }
                 })
             });
 
@@ -220,17 +222,17 @@ async function handleUserFormSubmit(event) {
 
             const authData = await authResponse.json();
             
-            // Then create profile
+            // Create profile
             response = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
                 method: 'POST',
                 headers: {
-                    'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'apikey': SERVICE_ROLE_KEY,
+                    'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
                     'Content-Type': 'application/json',
                     'Prefer': 'return=minimal'
                 },
                 body: JSON.stringify({
-                    id: authData.user.id,
+                    id: authData.id,
                     ...userData
                 })
             });
@@ -238,8 +240,8 @@ async function handleUserFormSubmit(event) {
             response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
                 method: 'PATCH',
                 headers: {
-                    'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'apikey': SERVICE_ROLE_KEY,
+                    'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
                     'Content-Type': 'application/json',
                     'Prefer': 'return=minimal'
                 },
@@ -277,8 +279,7 @@ async function confirmDeleteUser(userId) {
             const SUPABASE_URL = 'https://efemxvfuepbbqnmqzazt.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c';
 
-            // Delete profile first
-            const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`, {
                 method: 'DELETE',
                 headers: {
                     'apikey': SUPABASE_ANON_KEY,
@@ -287,21 +288,8 @@ async function confirmDeleteUser(userId) {
                 }
             });
 
-            if (!profileResponse.ok) {
-                throw new Error(`Error al eliminar perfil: ${profileResponse.status}`);
-            }
-
-            // Then delete auth user
-            const authResponse = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
-                method: 'DELETE',
-                headers: {
-                    'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                }
-            });
-
-            if (!authResponse.ok) {
-                throw new Error(`Error al eliminar usuario: ${authResponse.status}`);
+            if (!response.ok) {
+                throw new Error(`Error al eliminar usuario: ${response.status}`);
             }
 
             confirmDialog.style.display = 'none';

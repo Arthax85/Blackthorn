@@ -16,98 +16,99 @@ function isAdmin() {
 }
 
 // Function to handle login
+const SUPABASE_URL = 'https://efemxvfuepbbqnmqzazt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c';
+
+// Update login function
 async function login(event) {
-  event.preventDefault();
-  
-  const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-password').value;
-  
-  try {
-    // Show loading indicator
-    const loginButton = event.target.querySelector('button');
-    const originalText = loginButton.textContent;
-    loginButton.textContent = 'Iniciando sesión...';
-    loginButton.disabled = true;
+    event.preventDefault();
     
-    console.log('Attempting to connect to:', `${API_URL}/login`);
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
     
-    const response = await fetch(`${API_URL}/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      credentials: 'include',
-      body: JSON.stringify({ email, password })
-    });
-    
-    console.log('Response status:', response.status);
-    const data = await response.json();
-    console.log('Response data:', data);
-    
-    // Reset button
-    loginButton.textContent = originalText;
-    loginButton.disabled = false;
-    
-    if (!response.ok) {
-      // Check if it's an authentication error (401)
-      if (response.status === 401) {
-        throw new Error('Usuario y/o contraseña incorrecta');
-      } else {
-        throw new Error(data.error || 'Error al iniciar sesión');
+    try {
+        // Show loading indicator
+        const loginButton = event.target.querySelector('button');
+        const originalText = loginButton.textContent;
+        loginButton.textContent = 'Iniciando sesión...';
+        loginButton.disabled = true;
+
+        const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        // Reset button
+        loginButton.textContent = originalText;
+        loginButton.disabled = false;
+
+        if (!response.ok) {
+          // Check if it's an authentication error (401)
+          if (response.status === 401) {
+            throw new Error('Usuario y/o contraseña incorrecta');
+          } else {
+            throw new Error(data.error || 'Error al iniciar sesión');
+          }
+        }
+        
+        // Add admin role if email matches admin email
+        const adminEmails = ['zerocult_new@hotmail.com']; // Your admin email
+        if (adminEmails.includes(email.toLowerCase())) {
+          data.role = 'admin';
+        }
+        
+        // Add token if it's missing (for API authentication)
+        if (!data.token) {
+          console.log('No token in response, generating a mock token');
+          // Generate a mock token for testing - in production, the server should provide this
+          data.token = 'mock-token-' + btoa(email + ':' + Date.now());
+        }
+        
+        // Login successful
+        document.getElementById('user-name').innerText = data.name;
+        document.getElementById('user-email').innerText = data.email;
+        document.getElementById('user-info').style.display = 'block';
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('register-form').style.display = 'none';
+        
+        // Check if user is admin by email
+        if (adminEmails.includes(email.toLowerCase())) {
+          document.getElementById('admin-panel-link').style.display = 'block';
+        } else {
+          document.getElementById('admin-panel-link').style.display = 'none';
+        }
+        
+        // Reset the form
+        document.querySelector('#login-form form').reset();
+        
+        // Save login state
+        localStorage.setItem('currentUser', JSON.stringify(data));
+        
+        // Show success notification
+        showNotification('Inicio de sesión exitoso', 'success');
+        
+      } catch (error) {
+        console.error('Login error:', error);
+        
+        // Show error notification
+        showNotification(error.message || 'Error al iniciar sesión', 'error');
+        
+        // Reset button if it wasn't reset
+        const loginButton = event.target.querySelector('button');
+        if (loginButton) {
+          loginButton.textContent = 'Iniciar Sesión';
+          loginButton.disabled = false;
+        }
       }
     }
-    
-    // Add admin role if email matches admin email
-    const adminEmails = ['zerocult_new@hotmail.com']; // Your admin email
-    if (adminEmails.includes(email.toLowerCase())) {
-      data.role = 'admin';
-    }
-    
-    // Add token if it's missing (for API authentication)
-    if (!data.token) {
-      console.log('No token in response, generating a mock token');
-      // Generate a mock token for testing - in production, the server should provide this
-      data.token = 'mock-token-' + btoa(email + ':' + Date.now());
-    }
-    
-    // Login successful
-    document.getElementById('user-name').innerText = data.name;
-    document.getElementById('user-email').innerText = data.email;
-    document.getElementById('user-info').style.display = 'block';
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('register-form').style.display = 'none';
-    
-    // Check if user is admin by email
-    if (adminEmails.includes(email.toLowerCase())) {
-      document.getElementById('admin-panel-link').style.display = 'block';
-    } else {
-      document.getElementById('admin-panel-link').style.display = 'none';
-    }
-    
-    // Reset the form
-    document.querySelector('#login-form form').reset();
-    
-    // Save login state
-    localStorage.setItem('currentUser', JSON.stringify(data));
-    
-    // Show success notification
-    showNotification('Inicio de sesión exitoso', 'success');
-    
-  } catch (error) {
-    console.error('Login error:', error);
-    
-    // Show error notification
-    showNotification(error.message || 'Error al iniciar sesión', 'error');
-    
-    // Reset button if it wasn't reset
-    const loginButton = event.target.querySelector('button');
-    if (loginButton) {
-      loginButton.textContent = 'Iniciar Sesión';
-      loginButton.disabled = false;
-    }
-  }
-}
 
 // Function to handle registration
 async function register(event) {
