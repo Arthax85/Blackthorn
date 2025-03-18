@@ -343,10 +343,31 @@ function displayUsers(users, append = false) {
     });
 }
 
-// Initialize when DOM is loaded
+// Add this at the bottom of the file, before the DOMContentLoaded event
+function initAdminPanel() {
+    console.log('Initializing admin panel...');
+    
+    // Check admin status
+    if (!isAdmin()) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    // Add event listener for the "Add User" button
+    const addUserBtn = document.getElementById('add-user-btn');
+    if (addUserBtn) {
+        addUserBtn.addEventListener('click', showAddUserForm);
+    }
+
+    // Load initial user data
+    loadUsers();
+}
+
+// Modify the DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', () => {
-  // Check if we're on the admin page
-  if (document.getElementById('admin-panel')) {
-    initAdminPanel();
-  }
+    console.log('DOM loaded, checking for admin panel...');
+    if (document.getElementById('admin-panel')) {
+        console.log('Admin panel found, initializing...');
+        initAdminPanel();
+    }
 });
