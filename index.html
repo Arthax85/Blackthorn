@@ -24,7 +24,7 @@
         <!-- Login Form -->
         <div id="login-form">
             <h2>Iniciar Sesión</h2>
-            <form onsubmit="login(event)" id="login-form-element">
+            <form onsubmit="return window.login(event)">
                 <div class="form-group">
                     <label for="login-email">Email:</label>
                     <input type="email" id="login-email" name="email" required autocomplete="email">

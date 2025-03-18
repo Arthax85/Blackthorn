@@ -28,9 +28,9 @@ window.login = async function(event) {
       role: data.user.role || 'user'
     };
 
-    handleSuccessfulLogin(userData);
+    window.handleSuccessfulLogin(userData);
   } catch (error) {
-    handleLoginError(error);
+    window.handleLoginError(error);
   }
 };
 
@@ -92,7 +92,9 @@ window.handleSuccessfulLogin = function(userData) {
 window.handleLoginError = function(error) {
   console.error('Login error:', error);
   showNotification(error.message || 'Error al iniciar sesión', 'error');
-}
+  // Prevenir la recarga de la página en caso de error
+  return false;
+};
 
 window.handleSuccessfulRegistration = function() {
   showNotification('Registro exitoso. Por favor, inicia sesión.', 'success');
