@@ -82,19 +82,14 @@ async function loadUsers() {
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
         console.log('Current user data:', currentUser);
 
-        if (!currentUser || !currentUser.token) {
-            window.location.href = 'index.html?error=session_expired';
-            throw new Error('Sesión no válida');
-        }
-
         const SUPABASE_URL = 'https://efemxvfuepbbqnmqzazt.supabase.co';
-        const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MjI4MTgyMSwiZXhwIjoyMDU3ODU3ODIxfQ.aMgGzYvZYgzVGPHGDZPBXVNnQkr8eYRJhqXxFLaVh4Y';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c';
 
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*`, {
             method: 'GET',
             headers: {
-                'apikey': SERVICE_ROLE_KEY,
-                'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -200,37 +195,51 @@ async function handleUserFormSubmit(event) {
         role: document.getElementById('user-role').value
     };
     
-    if (mode === 'add') {
-        userData.password = document.getElementById('user-password').value;
-    }
-    
     try {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        if (!currentUser || !currentUser.email) {
-            throw new Error('No hay una sesión activa');
-        }
-        
         const SUPABASE_URL = 'https://efemxvfuepbbqnmqzazt.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c';
         
         let response;
         if (mode === 'add') {
-            response = await fetch(`${SUPABASE_URL}/rest/v1/users`, {
+            // First create auth user
+            const authResponse = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
                 method: 'POST',
                 headers: {
                     'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${currentUser.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: userData.email,
+                    password: document.getElementById('user-password').value
+                })
+            });
+
+            if (!authResponse.ok) {
+                throw new Error(`Error al crear usuario: ${authResponse.status}`);
+            }
+
+            const authData = await authResponse.json();
+            
+            // Then create profile
+            response = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
                     'Content-Type': 'application/json',
                     'Prefer': 'return=minimal'
                 },
-                body: JSON.stringify(userData)
+                body: JSON.stringify({
+                    id: authData.user.id,
+                    ...userData
+                })
             });
         } else {
-            response = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`, {
+            response = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
                 method: 'PATCH',
                 headers: {
                     'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${currentUser.token}`,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
                     'Content-Type': 'application/json',
                     'Prefer': 'return=minimal'
                 },
@@ -265,25 +274,34 @@ async function confirmDeleteUser(userId) {
     
     document.getElementById('confirm-yes').onclick = async () => {
         try {
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            if (!currentUser || !currentUser.email) {
-                throw new Error('No hay una sesión activa');
-            }
-
             const SUPABASE_URL = 'https://efemxvfuepbbqnmqzazt.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c';
 
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`, {
+            // Delete profile first
+            const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
                 method: 'DELETE',
                 headers: {
                     'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${currentUser.token}`,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
                     'Content-Type': 'application/json'
                 }
             });
 
-            if (!response.ok) {
-                throw new Error(`Error del servidor: ${response.status}`);
+            if (!profileResponse.ok) {
+                throw new Error(`Error al eliminar perfil: ${profileResponse.status}`);
+            }
+
+            // Then delete auth user
+            const authResponse = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+                method: 'DELETE',
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            });
+
+            if (!authResponse.ok) {
+                throw new Error(`Error al eliminar usuario: ${authResponse.status}`);
             }
 
             confirmDialog.style.display = 'none';
@@ -295,10 +313,6 @@ async function confirmDeleteUser(userId) {
             showNotification(error.message, 'error');
             confirmDialog.style.display = 'none';
         }
-    };
-    
-    document.getElementById('confirm-no').onclick = () => {
-        confirmDialog.style.display = 'none';
     };
 }
 
