@@ -104,15 +104,22 @@
     <!-- Notification container -->
     <div class="notification-container" id="notification-container"></div>
 
-    <!-- Load Supabase first -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Initialize Supabase -->
+    <!-- Load Supabase with proper version -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.1/dist/umd/supabase.min.js"></script>
     <script>
-        const supabaseClient = supabase.createClient(
+        const { createClient } = supabase;
+        const supabaseClient = createClient(
             'https://efemxvfuepbbqnmqzazt.supabase.co',
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c'
         );
+
+        // Check connection
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            console.log('Supabase auth event:', event);
+            if (session) {
+                console.log('Connected to Supabase');
+            }
+        });
     </script>
 
     <!-- Then load your application scripts -->
