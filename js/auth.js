@@ -3,7 +3,8 @@ const supabase = supabase.createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c'
 );
 
-// Eliminar la inicialización del cliente y usar el global
+// Eliminar la inicialización al inicio del archivo y usar directamente las funciones
+
 async function login(event) {
   event.preventDefault();
   const email = document.getElementById('login-email').value;
