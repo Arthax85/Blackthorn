@@ -9,7 +9,7 @@ async function login(event) {
   const password = document.getElementById('login-password').value;
   
   try {
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
+    const { data, error } = await window.supabaseClient.auth.signInWithPassword({
       email,
       password
     });
