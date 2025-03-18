@@ -9,7 +9,7 @@ async function login(event) {
   const password = document.getElementById('login-password').value;
   
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
       email,
       password
     });
@@ -80,3 +80,20 @@ function handleRegistrationError(error) {
   console.error('Registration error:', error);
   showNotification(error.message || 'Error al registrarse', 'error');
 }
+
+
+function checkLoggedInUser() {
+    const currentUser = localStorage.getItem('currentUser');
+    
+    if (currentUser) {
+        const user = JSON.parse(currentUser);
+        document.getElementById('user-name').innerText = user.name;
+        document.getElementById('user-email').innerText = user.email;
+        document.getElementById('user-info').style.display = 'block';
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('register-form').style.display = 'none';
+    }
+}
+
+// Export for use in animation.js
+window.checkLoggedInUser = checkLoggedInUser;
