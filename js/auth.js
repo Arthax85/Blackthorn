@@ -103,16 +103,25 @@ window.checkLoggedInUser = checkLoggedInUser;
 
 async function deleteAccount() {
   try {
-    const { error } = await window.supabase.auth.admin.deleteUser(
-      (await window.supabase.auth.getUser()).data.user.id
-    );
+    const { data: { user }, error: userError } = await window.supabase.auth.getUser();
+    if (userError) throw userError;
 
-    if (error) throw error;
+    // Primero eliminar los datos del usuario
+    const { error: deleteDataError } = await window.supabase
+      .from('users')
+      .delete()
+      .eq('id', user.id);
+    if (deleteDataError) throw deleteDataError;
 
-    // Clear local storage and show success message
+    // Luego eliminar la cuenta de autenticación
+    const { error: deleteAuthError } = await window.supabase.rpc('delete_user');
+    if (deleteAuthError) throw deleteAuthError;
+
+    // Limpiar datos locales
     localStorage.removeItem('currentUser');
     showNotification('Cuenta eliminada correctamente', 'success');
     showLoginForm();
+
   } catch (error) {
     console.error('Error deleting account:', error);
     showNotification('Error al eliminar la cuenta: ' + error.message, 'error');
