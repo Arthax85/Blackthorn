@@ -4,19 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blackthorn</title>
-    <!-- Make sure the CSS path is correct -->
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Logo container outside the main container -->
     <div class="logo-container" id="logo-container">
         <img src="rosaoff.png" alt="Logo" class="logo" id="logo">
         <div class="logo-text">Blackthorn</div>
     </div>
 
     <div class="container" id="container" style="display: none;">
-        <!-- Replaced text with small logo -->
         <div class="title-container">
             <img src="blackthornoff.png" alt="Logo" class="small-logo">
         </div>
@@ -24,7 +21,7 @@
         <!-- Login Form -->
         <div id="login-form">
             <h2>Iniciar Sesión</h2>
-            <form onsubmit="return window.login(event)">
+            <form onsubmit="login(event)">
                 <div class="form-group">
                     <label for="login-email">Email:</label>
                     <input type="email" id="login-email" name="email" required autocomplete="email">
@@ -39,10 +36,9 @@
             <p>¿Olvidaste tu contraseña? <a href="#" onclick="showPasswordRecoveryForm()">Recuperar contraseña</a></p>
         </div>
         
-        <!-- Registration Form -->
         <div id="register-form" style="display: none;">
             <h2>Registro</h2>
-            <form onsubmit="register(event)">
+            <form onsubmit="return window.register(event)">
                 <div class="form-group">
                     <label for="register-name">Nombre:</label>
                     <input type="text" id="register-name" required>
@@ -60,7 +56,6 @@
             <p>¿Ya tienes una cuenta? <a href="#" onclick="showLoginForm()">Inicia sesión</a></p>
         </div>
         
-        <!-- User Information -->
         <div id="user-info" style="display: none;">
             <h2>Información del Usuario</h2>
             <p>Bienvenido, <span id="user-name"></span>!</p>
@@ -70,15 +65,14 @@
                 <a href="admin.html" class="admin-link" onclick="return checkAdminAccess(event)">Acceder al Panel de Administración</a>
             </p>
             <div class="button-group">
-                <button onclick="signOut()" class="sign-out-btn">Cerrar sesión</button>
-                <button onclick="confirmDeleteAccount()" class="delete-account-btn">Eliminar cuenta</button>
+                <button onclick="window.signOut()" class="sign-out-btn">Cerrar sesión</button>
+                <button onclick="window.confirmDeleteAccount()" class="delete-account-btn">Eliminar cuenta</button>
             </div>
         </div>
         
-        <!-- Password Recovery Form -->
         <div id="password-recovery-form" style="display: none;">
             <h2>Recuperar Contraseña</h2>
-            <form onsubmit="recoverPassword(event)">
+            <form onsubmit="return window.recoverPassword(event)">
                 <div class="form-group">
                     <label for="recovery-email">Email:</label>
                     <input type="email" id="recovery-email" required>
@@ -89,7 +83,6 @@
         </div>
     </div>
 
-    <!-- Confirmation dialog -->
     <div id="confirmation-dialog" class="confirmation-dialog" style="display: none;">
         <div class="confirmation-content">
             <h3>Confirmar acción</h3>
@@ -101,10 +94,8 @@
         </div>
     </div>
 
-    <!-- Notification container -->
     <div class="notification-container" id="notification-container"></div>
 
-    <!-- Load Supabase first -->
     <script src="https://unpkg.com/@supabase/supabase-js"></script>
     <script>
         window.supabase = supabase.createClient(
@@ -113,7 +104,6 @@
         );
     </script>
 
-    <!-- Then load your application scripts -->
     <script src="js/notifications.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/auth.js"></script>

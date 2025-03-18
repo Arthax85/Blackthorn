@@ -3,36 +3,35 @@ const supabase = supabase.createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c'
 );
 
-// Eliminar la inicialización al inicio del archivo y usar directamente las funciones
+async function login(event) {
+    event.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    
+    try {
+        const { data, error } = await window.supabase.auth.signInWithPassword({
+            email,
+            password
+        });
 
-// Eliminar esta inicialización duplicada
-// const supabase = supabase.createClient(...);
+        if (error) throw error;
 
-window.login = async function(event) {
-  event.preventDefault();
-  const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-password').value;
-  
-  try {
-    const { data, error } = await window.supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+        const userData = {
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.user_metadata?.name || email.split('@')[0],
+            role: data.user.role || 'user'
+        };
 
-    if (error) throw error;
+        handleSuccessfulLogin(userData);
+        return false; // Prevent form submission
+    } catch (error) {
+        handleLoginError(error);
+        return false; // Prevent form submission
+    }
+}
 
-    const userData = {
-      id: data.user.id,
-      email: data.user.email,
-      name: data.user.user_metadata?.name || email.split('@')[0],
-      role: data.user.role || 'user'
-    };
-
-    window.handleSuccessfulLogin(userData);
-  } catch (error) {
-    window.handleLoginError(error);
-  }
-};
+window.login = login;
 
 window.register = async function(event) {
   event.preventDefault();
@@ -77,9 +76,8 @@ window.signOut = function() {
     console.error('Error signing out:', error);
     showNotification('Error al cerrar sesión', 'error');
   });
-}; // Corregir el cierre de la función
+};
 
-// Hacer globales las funciones de manejo
 window.handleSuccessfulLogin = function(userData) {
   document.getElementById('user-name').innerText = userData.name;
   document.getElementById('user-email').innerText = userData.email;
@@ -92,7 +90,6 @@ window.handleSuccessfulLogin = function(userData) {
 window.handleLoginError = function(error) {
   console.error('Login error:', error);
   showNotification(error.message || 'Error al iniciar sesión', 'error');
-  // Prevenir la recarga de la página en caso de error
   return false;
 };
 
@@ -120,7 +117,6 @@ window.checkLoggedInUser = function() {
     }
 }
 
-// Export for use in animation.js
 window.checkLoggedInUser = checkLoggedInUser;
 
 
@@ -129,35 +125,28 @@ async function deleteAccount() {
     const { data: { user }, error: userError } = await window.supabase.auth.getUser();
     if (userError) throw userError;
 
-    // Primero eliminar los datos del usuario
     const { error: deleteDataError } = await window.supabase
       .from('users')
       .delete()
       .eq('id', user.id);
     if (deleteDataError) throw deleteDataError;
 
-    // Luego eliminar la cuenta de autenticación
     const { error: deleteAuthError } = await window.supabase.rpc('delete_user');
     if (deleteAuthError) throw deleteAuthError;
 
-    // Limpiar datos locales y UI
     localStorage.removeItem('currentUser');
     
-    // Ocultar todos los formularios primero
     document.getElementById('user-info').style.display = 'none';
     document.getElementById('register-form').style.display = 'none';
     document.getElementById('password-recovery-form').style.display = 'none';
     
-    // Mostrar el formulario de login
     document.getElementById('login-form').style.display = 'block';
     
-    // Limpiar los campos de usuario
     document.getElementById('user-name').innerText = '';
     document.getElementById('user-email').innerText = '';
     
     showNotification('Cuenta eliminada correctamente', 'success');
     
-    // Recargar la página después de un breve retraso
     setTimeout(() => {
       window.location.reload();
     }, 2000);
@@ -168,5 +157,22 @@ async function deleteAccount() {
   }
 }
 
-// Make it globally available
 window.deleteAccount = deleteAccount;
+
+window.recoverPassword = async function(event) {
+    event.preventDefault();
+    const email = document.getElementById('recovery-email').value;
+    
+    try {
+        const { error } = await window.supabase.auth.resetPasswordForEmail(email);
+        if (error) throw error;
+        
+        showNotification('Se ha enviado un enlace de recuperación a tu email', 'success');
+        showLoginForm();
+        return false;
+    } catch (error) {
+        console.error('Password recovery error:', error);
+        showNotification(error.message || 'Error al enviar el email de recuperación', 'error');
+        return false;
+    }
+};
