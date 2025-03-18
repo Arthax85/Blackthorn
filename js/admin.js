@@ -80,24 +80,24 @@ async function loadUsers() {
         usersTable.innerHTML = '<tr><td colspan="6" class="loading-cell">Cargando usuarios...</td></tr>';
         
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        console.log('Current user data:', currentUser); // Debug user data
+        console.log('Current user data:', currentUser);
 
         if (!currentUser || !currentUser.token) {
             window.location.href = 'login.html';
             throw new Error('Sesión no válida');
         }
 
-        const API_URL = 'https://blackthorn-auth.onrender.com';
-        const response = await fetch(`${API_URL}/api/users`, {
+        // Change to Supabase URL
+        const SUPABASE_URL = 'https://efemxvfuepbbqnmqzazt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c';
+
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/users`, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                'apikey': SUPABASE_ANON_KEY,
                 'Authorization': `Bearer ${currentUser.token}`,
-                'X-Admin-Role': 'admin',
-                'X-Admin-Email': currentUser.email
-            },
-            credentials: 'include'
+                'Content-Type': 'application/json'
+            }
         });
 
         // Log response for debugging
@@ -189,230 +189,158 @@ function showEditUserForm(userId) {
 
 // Handle user form submission
 async function handleUserFormSubmit(event) {
-  event.preventDefault();
-  
-  const form = event.target;
-  const mode = form.getAttribute('data-mode');
-  const userId = form.getAttribute('data-id');
-  
-  const userData = {
-    name: document.getElementById('user-name').value,
-    email: document.getElementById('user-email').value,
-    role: document.getElementById('user-role').value
-  };
-  
-  // Add password for new users
-  if (mode === 'add') {
-    userData.password = document.getElementById('user-password').value;
-  }
-  
-  try {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (!currentUser || !currentUser.email) {
-      throw new Error('No hay una sesión activa');
+    event.preventDefault();
+    
+    const form = event.target;
+    const mode = form.getAttribute('data-mode');
+    const userId = form.getAttribute('data-id');
+    
+    const userData = {
+        name: document.getElementById('user-name').value,
+        email: document.getElementById('user-email').value,
+        role: document.getElementById('user-role').value
+    };
+    
+    if (mode === 'add') {
+        userData.password = document.getElementById('user-password').value;
     }
     
-    // API URL
-    const API_URL = 'https://blackthorn-auth.onrender.com';
-    
-    let response;
-    
-    // Use the real API with authentication
     try {
-      if (mode === 'add') {
-        // Create new user
-        response = await fetch(`${API_URL}/api/users`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentUser.token}`
-          },
-          body: JSON.stringify(userData)
-        });
-      } else {
-        // Update existing user
-        response = await fetch(`${API_URL}/api/users/${userId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentUser.token}`
-          },
-          body: JSON.stringify(userData)
-        });
-      }
-      
-      // Check if the request was successful
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API error response:', errorText);
-        throw new Error(`Error del servidor: ${response.status}`);
-      }
-      
-      // Check content type to ensure we're getting JSON
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await response.json();
-        console.log('API response:', data);
-      }
-      
-      // Close modal
-      document.getElementById('user-modal').style.display = 'none';
-      
-      // Reload users to get fresh data
-      loadUsers();
-      
-      // Show success notification
-      if (mode === 'add') {
-        showNotification('Usuario agregado correctamente', 'success');
-      } else {
-        showNotification('Usuario actualizado correctamente', 'success');
-      }
-      
-    } catch (apiError) {
-      console.error('API error:', apiError);
-      showNotification(`Error: ${apiError.message}`, 'error');
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser || !currentUser.email) {
+            throw new Error('No hay una sesión activa');
+        }
+        
+        const SUPABASE_URL = 'https://efemxvfuepbbqnmqzazt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c';
+        
+        let response;
+        if (mode === 'add') {
+            response = await fetch(`${SUPABASE_URL}/rest/v1/users`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${currentUser.token}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify(userData)
+            });
+        } else {
+            response = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`, {
+                method: 'PATCH',
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${currentUser.token}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify(userData)
+            });
+        }
+
+        if (!response.ok) {
+            throw new Error(`Error del servidor: ${response.status}`);
+        }
+
+        document.getElementById('user-modal').style.display = 'none';
+        loadUsers();
+        showNotification(
+            mode === 'add' ? 'Usuario agregado correctamente' : 'Usuario actualizado correctamente',
+            'success'
+        );
+
+    } catch (error) {
+        console.error('Form submission error:', error);
+        showNotification(error.message, 'error');
     }
-    
-  } catch (error) {
-    console.error('Form submission error:', error);
-    showNotification(error.message, 'error');
-  }
 }
 
 // Confirm delete user
-function confirmDeleteUser(userId) {
-  const confirmDialog = document.getElementById('confirmation-dialog');
-  const confirmMessage = document.getElementById('confirmation-message');
-  
-  confirmMessage.textContent = '¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.';
-  confirmDialog.style.display = 'flex';
-  
-  // Set up confirmation buttons
-  document.getElementById('confirm-yes').onclick = async () => {
-    try {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-      if (!currentUser || !currentUser.email) {
-        throw new Error('No hay una sesión activa');
-      }
-      
-      // Get the user row to access the full user data
-      const userRow = document.querySelector(`.delete-btn[data-id="${userId}"]`).closest('tr');
-      
-      // Check if we have the user data attribute
-      let userData;
-      try {
-        userData = JSON.parse(userRow.getAttribute('data-user'));
-        console.log('User data from row:', userData);
-      } catch (e) {
-        // If we can't get the data from the attribute, extract it from the table cells
-        console.warn('Could not parse user data from attribute, extracting from cells');
-        userData = {
-          id: userId,
-          name: userRow.cells[1].textContent,
-          email: userRow.cells[2].textContent,
-          role: userRow.cells[3].textContent
-        };
-        console.log('User data from cells:', userData);
-      }
-      
-      // API URL
-      const API_URL = 'https://blackthorn-auth.onrender.com';
-      
-      // Try to use the real API with authentication
-      try {
-        console.log(`Attempting to delete user with ID: ${userId}`);
-        
-        // Delete user - use the real API endpoint with authentication
-        const response = await fetch(`${API_URL}/api/users/${userId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentUser.token}`
-          }
-        });
-        
-        // Check if the request was successful
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Delete error response:', errorText);
-          throw new Error(`Error del servidor: ${response.status}`);
+async function confirmDeleteUser(userId) {
+    const confirmDialog = document.getElementById('confirmation-dialog');
+    const confirmMessage = document.getElementById('confirmation-message');
+    
+    confirmMessage.textContent = '¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.';
+    confirmDialog.style.display = 'flex';
+    
+    document.getElementById('confirm-yes').onclick = async () => {
+        try {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser || !currentUser.email) {
+                throw new Error('No hay una sesión activa');
+            }
+
+            const SUPABASE_URL = 'https://efemxvfuepbbqnmqzazt.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c';
+
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`, {
+                method: 'DELETE',
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${currentUser.token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error del servidor: ${response.status}`);
+            }
+
+            confirmDialog.style.display = 'none';
+            showNotification('Usuario eliminado correctamente', 'success');
+            loadUsers();
+
+        } catch (error) {
+            console.error('Delete user error:', error);
+            showNotification(error.message, 'error');
+            confirmDialog.style.display = 'none';
         }
-        
-        // For DELETE requests, we may not always get a response body
-        // Only try to parse JSON if we have a content-type header indicating JSON
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const data = await response.json();
-          console.log('API response:', data);
-        }
-        
-        // Close the confirmation dialog
+    };
+    
+    document.getElementById('confirm-no').onclick = () => {
         confirmDialog.style.display = 'none';
-        
-        // Show success notification
-        showNotification('Usuario eliminado correctamente', 'success');
-        
-        // Reload users to refresh the table
-        loadUsers();
-        
-      } catch (apiError) {
-        console.error('API error:', apiError);
-        showNotification(`Error al eliminar usuario: ${apiError.message}`, 'error');
-        confirmDialog.style.display = 'none';
-      }
-      
-    } catch (error) {
-      console.error('Delete user error:', error);
-      showNotification(error.message, 'error');
-      confirmDialog.style.display = 'none';
-    }
-  };
-  
-  document.getElementById('confirm-no').onclick = () => {
-    confirmDialog.style.display = 'none';
-  };
+    };
 }
 
 // Display users in the table
 function displayUsers(users, append = false) {
-  const usersTable = document.getElementById('users-table-body');
-  
-  if (!append) {
-    if (users.length === 0) {
-      usersTable.innerHTML = '<tr><td colspan="6" class="empty-cell">No hay usuarios registrados</td></tr>';
-      return;
+    const usersTable = document.getElementById('users-table-body');
+    
+    if (!append) {
+        if (users.length === 0) {
+            usersTable.innerHTML = '<tr><td colspan="6" class="empty-cell">No hay usuarios registrados</td></tr>';
+            return;
+        }
+        usersTable.innerHTML = '';
     }
     
-    usersTable.innerHTML = '';
-  }
-  
-  users.forEach(user => {
-    // Store the original user object as a data attribute for later use
-    const row = document.createElement('tr');
-    row.setAttribute('data-user', JSON.stringify(user));
+    users.forEach(user => {
+        const row = document.createElement('tr');
+        row.setAttribute('data-user', JSON.stringify(user));
+        
+        row.innerHTML = `
+            <td>${user.id}</td>
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>${user.role || 'user'}</td>
+            <td>${user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</td>
+            <td>
+                <button class="edit-btn" data-id="${user.id}">Editar</button>
+                <button class="delete-btn" data-id="${user.id}">Eliminar</button>
+            </td>
+        `;
+        usersTable.appendChild(row);
+    });
     
-    row.innerHTML = `
-      <td>${user.id}</td>
-      <td>${user.name}</td>
-      <td>${user.email}</td>
-      <td>${user.role || 'user'}</td>
-      <td>${new Date(user.createdAt).toLocaleDateString()}</td>
-      <td>
-        <button class="edit-btn" data-id="${user.id}">Editar</button>
-        <button class="delete-btn" data-id="${user.id}">Eliminar</button>
-      </td>
-    `;
-    usersTable.appendChild(row);
-  });
-  
-  // Add event listeners to buttons
-  document.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.addEventListener('click', () => showEditUserForm(btn.getAttribute('data-id')));
-  });
-  
-  document.querySelectorAll('.delete-btn').forEach(btn => {
-    btn.addEventListener('click', () => confirmDeleteUser(btn.getAttribute('data-id')));
-  });
+    // Add event listeners to buttons
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => showEditUserForm(btn.getAttribute('data-id')));
+    });
+    
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => confirmDeleteUser(btn.getAttribute('data-id')));
+    });
 }
 
 // Initialize when DOM is loaded
