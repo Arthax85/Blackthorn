@@ -1,5 +1,5 @@
 // Animation related code
-window.onload = function () {
+window.onload = async function () {
   console.log("Page loaded successfully");
   
   // Hide the container initially
@@ -45,7 +45,12 @@ window.onload = function () {
         }
         
         // Check for logged in user after animations
-        setTimeout(checkLoggedInUser, 500);
+        // Modificar el último setTimeout para usar window.checkLoggedInUser
+        setTimeout(() => {
+          if (typeof window.checkLoggedInUser === 'function') {
+            window.checkLoggedInUser();
+          }
+        }, 500);
     }, 3000); // Duración de la animación inicial
   }
 };

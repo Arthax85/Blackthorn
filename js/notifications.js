@@ -1,5 +1,4 @@
-// Function to show notifications
-function showNotification(message, type = 'info', duration = 5000) {
+window.showNotification = function(message, type = 'info', duration = 5000) {
   // Check if container exists, create it if it doesn't
   let container = document.getElementById('notification-container');
   if (!container) {

@@ -104,23 +104,18 @@
     <!-- Notification container -->
     <div class="notification-container" id="notification-container"></div>
 
-    <!-- Load Supabase with proper version -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.1/dist/umd/supabase.min.js"></script>
+    <!-- Load Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js"></script>
     <script>
-        window.supabaseClient = supabase.createClient(
-            'https://efemxvfuepbbqnmqzazt.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c'
-        );
-
-        // Initialize auth state listener
-        window.supabaseClient.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                console.log('Connected to Supabase, user:', session.user.email);
-            }
-        });
+        // Create Supabase client
+        const supabaseUrl = 'https://efemxvfuepbbqnmqzazt.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmZW14dmZ1ZXBiYnFubXF6YXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyODE4MjEsImV4cCI6MjA1Nzg1NzgyMX0.gBZfJXvQKSgWqkJ_N4Mccs9DXwMmqAKWXjOSOx4m9-c';
+        
+        // Initialize globally
+        window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
     </script>
 
-    <!-- Then load your application scripts -->
+    <!-- Application scripts -->
     <script src="js/notifications.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/auth.js"></script>

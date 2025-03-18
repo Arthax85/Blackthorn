@@ -10,7 +10,7 @@ async function login(event) {
   const password = document.getElementById('login-password').value;
   
   try {
-    const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+    const { data, error } = await window.supabase.auth.signInWithPassword({
       email,
       password
     });
@@ -37,7 +37,7 @@ async function register(event) {
   const password = document.getElementById('register-password').value;
 
   try {
-    const { data, error } = await window.supabaseClient.auth.signUp({
+    const { data, error } = await window.supabase.auth.signUp({
       email,
       password,
       options: {
@@ -53,7 +53,7 @@ async function register(event) {
 }
 
 function signOut() {
-  window.supabaseClient.auth.signOut();
+  window.supabase.auth.signOut();
   localStorage.removeItem('currentUser');
   showLoginForm();
 }

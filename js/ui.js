@@ -1,20 +1,17 @@
 // UI related functions
 
-// Function to show login form
-function showLoginForm() {
+// Hacer las funciones disponibles globalmente
+window.showLoginForm = function() {
   document.getElementById('login-form').style.display = 'block';
   document.getElementById('register-form').style.display = 'none';
   document.getElementById('password-recovery-form').style.display = 'none';
-  document.getElementById('user-info').style.display = 'none';
-}
+};
 
-// Function to show register form
-function showRegisterForm() {
+window.showRegisterForm = function() {
   document.getElementById('login-form').style.display = 'none';
   document.getElementById('register-form').style.display = 'block';
   document.getElementById('password-recovery-form').style.display = 'none';
-  document.getElementById('user-info').style.display = 'none';
-}
+};
 
 // Function to show password recovery form
 function showPasswordRecoveryForm() {
