@@ -61,154 +61,73 @@ if (typeof showNotification !== 'function') {
 // Function to check if user is admin (if not defined in auth.js)
 // Function to check if user is admin
 function isAdmin() {
-  const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-  // Check both role and email for admin status
-  const adminEmails = ['zerocult_new@hotmail.com']; // Tu email de administrador
-  return currentUser && (
-    currentUser.role === 'admin' || 
-    (currentUser.email && adminEmails.includes(currentUser.email.toLowerCase()))
-  );
+    try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        console.log('Current user data:', currentUser);
+        return currentUser && (
+            currentUser.role === 'admin' || 
+            currentUser.email === 'zerocult_new@hotmail.com'
+        );
+    } catch (error) {
+        console.error('Error checking admin status:', error);
+        return false;
+    }
 }
 
-// Initialize admin panel
-function initAdminPanel() {
-  console.log('Initializing admin panel');
-  
-  // Add authentication headers to all requests
-  const headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Authorization': `Bearer ${localStorage.getItem('currentUser') ? JSON.parse(localStorage.getItem('currentUser')).token : ''}`
-  };
-  
-  console.log('Admin check:', isAdmin());
-  
-  // Check if user is admin
-  if (!isAdmin()) {
-    console.log('Not an admin, redirecting to index');
-    showNotification('Acceso denegado: No tienes permisos de administrador', 'error');
-    setTimeout(() => {
-      window.location.href = 'index.html';
-    }, 2000);
-    return;
-  }
-  
-  console.log('Admin access granted, loading users');
-  
-  // Load real users from database
-  loadUsers();
-  
-  // Set up event listeners
-  document.getElementById('add-user-btn').addEventListener('click', showAddUserForm);
-  document.getElementById('back-to-dashboard').addEventListener('click', () => {
-    window.location.href = 'index.html';
-  });
-}
-
-// Load all users from the database
 async function loadUsers() {
-  try {
-    const usersTable = document.getElementById('users-table-body');
-    usersTable.innerHTML = '<tr><td colspan="6" class="loading-cell">Cargando usuarios...</td></tr>';
-    
-    // Get current user from localStorage - with better error handling
-    let currentUser;
     try {
-      const userData = localStorage.getItem('currentUser');
-      console.log('Raw user data from localStorage:', userData);
-      
-      if (!userData) {
-        throw new Error('No user data found in localStorage');
-      }
-      
-      currentUser = JSON.parse(userData);
-      console.log('Parsed current user:', currentUser);
-      
-      if (!currentUser || !currentUser.email) {
-        throw new Error('Invalid user data in localStorage');
-      }
-    } catch (userError) {
-      console.error('Error getting user data:', userError);
-      throw new Error('No hay una sesión activa válida. Por favor, inicia sesión nuevamente.');
-    }
-    
-    // Try to fetch users from the real API
-    try {
-      console.log('Attempting to fetch users from real database');
-      
-      // API URL - use the real API endpoint
-      const API_URL = 'https://blackthorn-auth.onrender.com';
-      
-      // Log the request details for debugging
-      console.log('Making request to:', `${API_URL}/api/users`);
-      console.log('With token:', currentUser.token ? `${currentUser.token.substring(0, 10)}...` : 'No token');
-      
-      // Make the API request to the real endpoint with authentication
-      const response = await fetch(`${API_URL}/api/users`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${currentUser.token}`
+        const usersTable = document.getElementById('users-table-body');
+        usersTable.innerHTML = '<tr><td colspan="6" class="loading-cell">Cargando usuarios...</td></tr>';
+        
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser || !currentUser.token) {
+            window.location.href = 'login.html';
+            throw new Error('Sesión no válida');
         }
-      });
-      
-      // Log response details for debugging
-      console.log('API Response status:', response.status);
-      console.log('API Response headers:', [...response.headers.entries()]);
-      
-      // Check if the request was successful
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response body:', errorText);
-        throw new Error(`Error del servidor: ${response.status} - ${response.statusText}`);
-      }
-      
-      // Check content type to ensure we're getting JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const bodyText = await response.text();
-        console.error('Non-JSON response body:', bodyText.substring(0, 500) + '...');
-        throw new Error(`Respuesta no válida: esperaba JSON pero recibió ${contentType || 'unknown'}`);
-      }
-      
-      // Parse the response
-      const data = await response.json();
-      console.log('Users data from API:', data);
-      
-      // Handle different response formats
-      let users = [];
-      if (Array.isArray(data)) {
-        users = data;
-      } else if (data.users && Array.isArray(data.users)) {
-        users = data.users;
-      } else if (data.data && Array.isArray(data.data)) {
-        users = data.data;
-      } else {
-        console.error('Unexpected response format:', data);
-        throw new Error('Formato de respuesta inesperado');
-      }
-      
-      // Display the users
-      displayUsers(users);
-      
-    } catch (apiError) {
-      console.error('API error:', apiError);
-      const usersTable = document.getElementById('users-table-body');
-      usersTable.innerHTML = `<tr><td colspan="6" class="error-cell">Error de conexión: ${apiError.message}</td></tr>`;
-      
-      // Show notification with more details
-      showNotification(`Error al conectar con la base de datos: ${apiError.message}`, 'error');
+
+        const API_URL = 'https://blackthorn-auth.onrender.com';
+        const response = await fetch(`${API_URL}/api/users`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${currentUser.token}`,
+                'X-Admin-Secret': currentUser.token
+            },
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('currentUser');
+                window.location.href = 'login.html';
+                throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+            }
+            throw new Error(`Error del servidor: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Users data from API:', data);
+        
+        let users = [];
+        if (Array.isArray(data)) {
+            users = data;
+        } else if (data.users && Array.isArray(data.users)) {
+            users = data.users;
+        } else if (data.data && Array.isArray(data.data)) {
+            users = data.data;
+        } else {
+            throw new Error('Formato de respuesta inesperado');
+        }
+        
+        displayUsers(users);
+        
+    } catch (error) {
+        console.error('Load users error:', error);
+        const usersTable = document.getElementById('users-table-body');
+        usersTable.innerHTML = `<tr><td colspan="6" class="error-cell">Error: ${error.message}</td></tr>`;
+        showNotification(`Error al cargar usuarios: ${error.message}`, 'error');
     }
-    
-  } catch (error) {
-    console.error('Load users error:', error);
-    const usersTable = document.getElementById('users-table-body');
-    usersTable.innerHTML = `<tr><td colspan="6" class="error-cell">Error: ${error.message}</td></tr>`;
-    
-    // Show notification with more details
-    showNotification(`Error al cargar usuarios: ${error.message}`, 'error');
-  }
 }
 
 // Show add user form
