@@ -117,10 +117,27 @@ async function deleteAccount() {
     const { error: deleteAuthError } = await window.supabase.rpc('delete_user');
     if (deleteAuthError) throw deleteAuthError;
 
-    // Limpiar datos locales
+    // Limpiar datos locales y UI
     localStorage.removeItem('currentUser');
+    
+    // Ocultar todos los formularios primero
+    document.getElementById('user-info').style.display = 'none';
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('password-recovery-form').style.display = 'none';
+    
+    // Mostrar el formulario de login
+    document.getElementById('login-form').style.display = 'block';
+    
+    // Limpiar los campos de usuario
+    document.getElementById('user-name').innerText = '';
+    document.getElementById('user-email').innerText = '';
+    
     showNotification('Cuenta eliminada correctamente', 'success');
-    showLoginForm();
+    
+    // Recargar la página después de un breve retraso
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
 
   } catch (error) {
     console.error('Error deleting account:', error);
